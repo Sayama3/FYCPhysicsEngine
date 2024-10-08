@@ -1,0 +1,42 @@
+cmake_minimum_required(VERSION 3.16)
+
+set(PHYSICS_SRC
+		include/Physics/Physics.hpp
+		src/Physics.cpp
+)
+
+add_library(Physics STATIC ${PHYSICS_SRC})
+
+target_include_directories(Physics PUBLIC include)
+target_include_directories(Physics PRIVATE src)
+
+target_precompile_headers(Physics PUBLIC
+		# Utility stuff
+		<functional>
+		<utility>
+		<algorithm>
+		<memory>
+		<source_location>
+
+		# Exception related stuff
+		<exception>
+		<stdexcept>
+
+		# String & IO manipulation
+		<filesystem>
+		<string>
+		<string_view>
+
+		# Containers
+		<array>
+		<vector>
+		<stack>
+		<queue>
+
+		# C-Types Helpers
+		<cstdint>
+		<cstring>
+		<cmath>
+)
+
+add_library(FYC::Physics ALIAS Physics)
