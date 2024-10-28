@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 set(PHYSICS_SRC
 		include/Physics/Physics.hpp
 		src/Physics.cpp
+		src/Math.cpp
+		include/Physics/Math.hpp
 )
 
 add_library(Physics STATIC ${PHYSICS_SRC})
@@ -38,5 +40,9 @@ target_precompile_headers(Physics PUBLIC
 		<cstring>
 		<cmath>
 )
+
+if(FYC_DOUBLE)
+	target_compile_definitions(Physics PUBLIC FYC_DOUBLE=1)
+endif ()
 
 add_library(FYC::Physics ALIAS Physics)

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "Math.hpp"
+
 namespace FYC {
 
 	class Physics {

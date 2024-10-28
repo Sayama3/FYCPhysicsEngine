@@ -9,6 +9,8 @@ project(FYCPhysicsEngine
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(FYC_DOUBLE "Use 64bits float for the physics engine." OFF)
+
 add_subdirectory(Libraries)
 add_subdirectory(Physics)
 add_subdirectory(Application)
