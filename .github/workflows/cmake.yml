@@ -17,6 +17,9 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         compiler: [llvm, gcc]
+        exclude:
+          - os: macos-latest
+            compiler: gcc
         include:
           - os: windows-latest
             compiler: msvc
