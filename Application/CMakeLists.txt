@@ -1,7 +1,13 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16) # Precompiled header available
 
 # Our Project
-add_executable(${PROJECT_NAME} src/main.cpp)
+set(APPLICATION_SRC
+		src/main.cpp
+)
+add_executable(${PROJECT_NAME} ${APPLICATION_SRC})
+
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_include_directories(${PROJECT_NAME} PRIVATE src)
 
 #set(raylib_VERBOSE 1)
 target_link_libraries(${PROJECT_NAME} raylib FYC::Physics)

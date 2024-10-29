@@ -48,8 +48,11 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 
-# Build folder wildcard
+# Build folders (using wildcards if necessary)
 *[Bb]uild*/
+[Ii]n/
+[Ii]nt/
+[Oo]ut/
 
 # vs cache
 .vs/
