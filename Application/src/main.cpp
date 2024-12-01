@@ -14,7 +14,6 @@
 ********************************************************************************************/
 
 #include <raylib.h>
-#include "Physics/Physics.hpp"
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -26,6 +25,8 @@
 int screenWidth = 800;
 int screenHeight = 450;
 
+Camera2D camera2D = Camera2D {{static_cast<float>(screenWidth)*0.5f,static_cast<float>(screenHeight)*0.5f},{0,0}, 0, static_cast<float>(screenHeight) * 0.2f};
+
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
@@ -36,11 +37,6 @@ void UpdateDrawFrame(void);     // Update and Draw one frame
 //----------------------------------------------------------------------------------
 int main()
 {
-	{
-		FYC::Physics p;
-		p.DoThings();
-	}
-
 	// Initialization
 	//--------------------------------------------------------------------------------------
 	InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
@@ -82,7 +78,14 @@ void UpdateDrawFrame(void)
 
 	ClearBackground(RAYWHITE);
 
-	DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+    BeginMode2D(camera2D);
+
+	DrawCircleV({0.0f,-1.5f},0.5f, Color{20, 30, 200, 255});
+	DrawRectangleV({-0.5,-0.5},{1,1}, Color{200, 30, 20, 255});
+
+	EndMode2D();
+
+	DrawText("Congrats! You created your first window!", 190, 350, 20, LIGHTGRAY);
 
 	EndDrawing();
 	//----------------------------------------------------------------------------------
