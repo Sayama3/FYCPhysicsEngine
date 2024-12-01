@@ -126,8 +126,8 @@ namespace FYC {
 		inline static constexpr Real tau {6.28318530717958647692};
 		inline static constexpr Real pi  {3.14159265358979323846};
 		inline static constexpr Real phi {1.61803398874989484820};
-		inline static constexpr Real deg2rad {pi / Real(180)};
-		inline static constexpr Real rad2deg {Real(180) / pi};
+		inline static constexpr Real deg2rad {pi / static_cast<Real>(180)};
+		inline static constexpr Real rad2deg {static_cast<Real>(180) / pi};
 
 		Real Dot(const Vec2& a, const Vec2& b);
 		Real MagnitudeSqr(const Vec2& vec);

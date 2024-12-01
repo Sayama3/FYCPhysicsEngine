@@ -10,7 +10,7 @@ if (NOT raylib_FOUND) # If there's none, fetch and build raylib
 	FetchContent_Declare(
 			raylib
 			GIT_REPOSITORY https://github.com/raysan5/raylib.git
-			GIT_TAG 89a37cd3151ef2a91643d797941711889bddf0fb # Commit of the 07/10/2024 (DD/MM/YYYY)
+			GIT_TAG "5.5"
 	)
 
 	FetchContent_GetProperties(raylib)
