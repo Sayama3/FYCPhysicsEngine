@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16) # Precompiled header available
 
 # Our Project
 set(APPLICATION_SRC
+		include/Application.hpp
+		src/Application.cpp
 		src/main.cpp
 )
 add_executable(${PROJECT_NAME} ${APPLICATION_SRC})
