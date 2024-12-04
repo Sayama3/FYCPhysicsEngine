@@ -1,6 +1,6 @@
 #include "Application.hpp"
 
-int main(const char* argv[], int argc)
+int main(int argc, const char** argv)
 {
 	Application* application = new Application();
 
