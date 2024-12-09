@@ -23,6 +23,10 @@ public:
 	void Run();
 private:
 	void Update();
+
+	void UpdateLogic();
+	void UpdateRendering();
+	void UpdateUI();
 private:
 	uint32_t m_Width, m_Height;
 	Camera2D m_Camera2D;

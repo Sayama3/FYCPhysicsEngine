@@ -41,6 +41,11 @@ void Application::Run() {
 
 void Application::Update()
 {
+	// Logic such as Physics or Camera Update here
+	//----------------------------------------------------------------------------------
+	UpdateLogic();
+	//----------------------------------------------------------------------------------
+
 	// Draw
 	//----------------------------------------------------------------------------------
 	BeginDrawing();
@@ -49,15 +54,26 @@ void Application::Update()
 
 	BeginMode2D(m_Camera2D);
 
-	DrawCircleV({0.0f,-1.5f},0.5f, Color{20, 30, 200, 255});
-	DrawRectangleV({-0.5,-0.5},{1,1}, Color{200, 30, 20, 255});
+	UpdateRendering();
 
 	EndMode2D();
 
-	DrawText("Congrats! You created your first window!", 190, 350, 20, LIGHTGRAY);
+	UpdateUI();
 
 	EndDrawing();
 	//----------------------------------------------------------------------------------
+}
+
+void Application::UpdateLogic() {
+}
+
+void Application::UpdateRendering() {
+	DrawCircleV({0.0f,-1.5f},0.5f, Color{20, 30, 200, 255});
+	DrawRectangleV({-0.5,-0.5},{1,1}, Color{200, 30, 20, 255});
+}
+
+void Application::UpdateUI() {
+	DrawText("Congrats! You created your first window!", 190, 350, 20, LIGHTGRAY);
 }
 
 Application::~Application() {
