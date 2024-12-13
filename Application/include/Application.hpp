@@ -6,6 +6,8 @@
 
 #include <raylib.h>
 
+#include "Camera.hpp"
+
 #if defined(PLATFORM_WEB)
 void UpdateLoop(void* arg);
 #endif
@@ -29,5 +31,7 @@ private:
 	void UpdateUI();
 private:
 	uint32_t m_Width, m_Height;
-	Camera2D m_Camera2D;
+	FYC::Real m_CameraMoveSpeed = 4;
+	FYC::Real m_CameraZoomSpeed = 0.05;
+	FYC::Application::Camera m_Camera;
 };

@@ -5,6 +5,8 @@ set(APPLICATION_SRC
 		include/Application.hpp
 		src/Application.cpp
 		src/main.cpp
+		src/Camera.cpp
+		include/Camera.hpp
 )
 add_executable(${PROJECT_NAME} ${APPLICATION_SRC})
 

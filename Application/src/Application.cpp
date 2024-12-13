@@ -11,7 +11,7 @@
 #endif
 
 Application::Application(int width, int height, const std::string& name)
-	: m_Width(width), m_Height(height), m_Camera2D({{static_cast<float>(m_Width)*0.5f,static_cast<float>(m_Height)*0.5f},{0,0}, 0, static_cast<float>(m_Height) * 0.2f})
+	: m_Width(width), m_Height(height), m_Camera(m_Width, m_Height)
 {
 	// Initialization
 	//--------------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ void Application::Update()
 
 	ClearBackground(RAYWHITE);
 
-	BeginMode2D(m_Camera2D);
+	BeginMode2D(m_Camera.GetRaylibCamera());
 
 	UpdateRendering();
 
@@ -64,7 +64,27 @@ void Application::Update()
 	//----------------------------------------------------------------------------------
 }
 
-void Application::UpdateLogic() {
+void Application::UpdateLogic()
+{
+
+	if (IsKeyDown(KEY_R)) {
+		m_Camera.SetPosition({0,0});
+		m_Camera.SetZoom(static_cast<FYC::Real>(m_Height) * 0.2f);
+	} else {
+		FYC::Vec2 movement{};
+
+		if (IsKeyDown(KeyboardKey::KEY_W) || IsKeyDown(KeyboardKey::KEY_UP))	movement += {+0, -1};
+		if (IsKeyDown(KeyboardKey::KEY_S) || IsKeyDown(KeyboardKey::KEY_DOWN))	movement += {+0, +1};
+		if (IsKeyDown(KeyboardKey::KEY_D) || IsKeyDown(KeyboardKey::KEY_RIGHT))	movement += {+1, +0};
+		if (IsKeyDown(KeyboardKey::KEY_A) || IsKeyDown(KeyboardKey::KEY_LEFT))	movement += {-1, +0};
+
+		Vector2 mouseWheel = GetMouseWheelMoveV();
+		FYC::Real zoom = 1 + mouseWheel.y * m_CameraZoomSpeed;
+		movement.x += -mouseWheel.x;
+
+		m_Camera.Move(movement * (GetFrameTime() * m_CameraMoveSpeed));
+		m_Camera.MultiplyZoom(zoom);
+	}
 }
 
 void Application::UpdateRendering() {
