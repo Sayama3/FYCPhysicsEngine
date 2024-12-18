@@ -1,0 +1,26 @@
+Comme indiqué par la License, voici une liste des modifications effectuer par rapports aux sources originals
+
+- Suppressions des dossiers :
+  - .github/
+  - examples/
+  - logo/
+  - parser/
+  - projets/
+
+- Suppressions des fichiers
+  - .gitignore
+  - BINDINGS.md
+  - CHANGELOG
+  - CONTRIBUTING.md
+  - CONVENTIONS.md
+  - FAQ.md
+  - HISTORY.md
+  - ROADMAP.md
+  - build.zig
+  - build.zig.zon
+
+- Edition du fichier "CMakeOptions.txt" :
+  - Suppression de la ligne 10 (ajout de l'option de compilation des exemples) "option(BUILD_EXAMPLES "Build the examples." ${RAYLIB_IS_MAIN})"
+
+- Edition du fichier "CMakeLists.txt" :
+  - Suppression des lignes 59 à 62 (Compilation des exemples)
