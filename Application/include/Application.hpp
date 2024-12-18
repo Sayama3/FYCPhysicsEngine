@@ -31,7 +31,8 @@ private:
 	void UpdateUI();
 private:
 	uint32_t m_Width, m_Height;
-	FYC::Real m_CameraMoveSpeed = 4;
+	FYC::Real m_CameraMoveSpeed = 4.0;
+	FYC::Real m_CameraMoveFastSpeed = 12.0;
 	FYC::Real m_CameraZoomSpeed = 0.05;
 	FYC::Application::Camera m_Camera;
 };

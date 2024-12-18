@@ -11,10 +11,14 @@ namespace FYC::Application {
 	class Camera
 	{
 	public:
-		Camera(Real viewportWidth = 800, Real viewportHeight = 450);
+		Camera();
+		Camera(Real viewportWidth, Real viewportHeight);
 		Camera(Real viewportWidth, Real viewportHeight, Real zoom);
 		~Camera() = default;
 	public:
+		void SetViewport(Real width, Real height);
+		void SetViewport(Real width, Real height, Real zoom);
+
 		void Move(const Vec2& movement);
 		void MultiplyZoom(Real multiplicator);
 

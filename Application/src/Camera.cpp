@@ -6,8 +6,16 @@
 
 namespace FYC::Application {
 
+	static constexpr Real c_DefaultWidth{800};
+	static constexpr Real c_DefaultHeight{450};
 	static constexpr Real c_CenterOffsetMultiplier{0.5};
 	static constexpr Real c_DefaultZoomMultiplier{0.2};
+
+
+	Camera::Camera()
+		: m_Camera({{static_cast<float>(c_DefaultWidth)*c_CenterOffsetMultiplier,static_cast<float>(c_DefaultHeight)*c_CenterOffsetMultiplier},{0,0}, 0, static_cast<float>(c_DefaultHeight) * c_DefaultZoomMultiplier})
+	{
+	}
 
 	Camera::Camera(Real viewportWidth, Real viewportHeight)
 	: m_Camera({{static_cast<float>(viewportWidth)*c_CenterOffsetMultiplier,static_cast<float>(viewportHeight)*c_CenterOffsetMultiplier},{0,0}, 0, static_cast<float>(viewportHeight) * c_DefaultZoomMultiplier})
@@ -18,6 +26,10 @@ namespace FYC::Application {
 	: m_Camera({{static_cast<float>(viewportWidth)*c_CenterOffsetMultiplier,static_cast<float>(viewportHeight)*c_CenterOffsetMultiplier},{0,0}, 0, zoom})
 	{
 	}
+
+
+	void Camera::SetViewport(Real width, Real height) {m_Camera.offset = {static_cast<float>(width)*c_CenterOffsetMultiplier,static_cast<float>(height)*c_CenterOffsetMultiplier};}
+	void Camera::SetViewport(Real width, Real height, Real zoom) { SetViewport(width, height); SetZoom(zoom); }
 
 	void Camera::Move(const Vec2& movement)
 	{

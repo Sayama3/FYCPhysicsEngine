@@ -80,9 +80,11 @@ void Application::UpdateLogic()
 
 		Vector2 mouseWheel = GetMouseWheelMoveV();
 		FYC::Real zoom = 1 + mouseWheel.y * m_CameraZoomSpeed;
-		movement.x += -mouseWheel.x;
 
-		m_Camera.Move(movement * (GetFrameTime() * m_CameraMoveSpeed));
+		bool isMovingFast = IsKeyDown(KeyboardKey::KEY_LEFT_SHIFT) || IsKeyDown(KeyboardKey::KEY_RIGHT_SHIFT) || IsKeyDown(KeyboardKey::KEY_KP_0);
+		FYC::Real cameraSpeed = isMovingFast ? m_CameraMoveFastSpeed : m_CameraMoveSpeed;
+
+		m_Camera.Move(movement * (GetFrameTime() * cameraSpeed));
 		m_Camera.MultiplyZoom(zoom);
 	}
 }
