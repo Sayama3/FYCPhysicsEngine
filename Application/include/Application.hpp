@@ -30,6 +30,7 @@ private:
 	void UpdateRendering();
 	void UpdateUI();
 private:
+	bool m_ImGuiIsActive = false;
 	uint32_t m_Width, m_Height;
 	FYC::Real m_CameraMoveSpeed = 4.0;
 	FYC::Real m_CameraMoveFastSpeed = 12.0;
