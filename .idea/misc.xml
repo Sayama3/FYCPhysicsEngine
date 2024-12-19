@@ -5,7 +5,18 @@
   </component>
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
+    <sourceRoots>
+      <file path="$PROJECT_DIR$/Application/include" />
+      <file path="$PROJECT_DIR$/Application/src" />
+      <file path="$PROJECT_DIR$/Physics/include" />
+      <file path="$PROJECT_DIR$/Physics/src" />
+    </sourceRoots>
+    <libraryRoots>
+      <file path="$PROJECT_DIR$/Application/vendors" />
+      <file path="$PROJECT_DIR$/Libraries/raylib-5.5" />
+    </libraryRoots>
     <excludeRoots>
+      <file path="$PROJECT_DIR$/.github" />
       <file path="$PROJECT_DIR$/build" />
     </excludeRoots>
   </component>
