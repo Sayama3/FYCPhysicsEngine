@@ -53,6 +53,14 @@ namespace FYC::Application {
 		m_Camera.target.y = position.y;
 	}
 
+	Vec2 Camera::GetPosition() const {
+		return {m_Camera.target.x, m_Camera.target.y};
+	}
+
+	Real Camera::GetZoom() const {
+		return m_Camera.zoom;
+	}
+
 	const Camera2D & Camera::GetRaylibCamera() const
 	{
 		return m_Camera;

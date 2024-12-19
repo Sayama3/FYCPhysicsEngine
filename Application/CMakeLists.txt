@@ -30,6 +30,7 @@ set(APPLICATION_SRC
 		src/main.cpp
 		src/Camera.cpp
 		include/Camera.hpp
+		include/ImGuiLib.hpp
 )
 add_executable(${PROJECT_NAME} ${APPLICATION_SRC} ${APPLICATION_VENDORS})
 

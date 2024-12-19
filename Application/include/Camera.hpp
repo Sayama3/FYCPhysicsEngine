@@ -24,6 +24,9 @@ namespace FYC::Application {
 
 		void SetZoom(Real zoom);
 		void SetPosition(const Vec2& position);
+
+		[[nodiscard]] Vec2 GetPosition() const;
+		[[nodiscard]] Real GetZoom() const;
 	public:
 		[[nodiscard]] const Camera2D& GetRaylibCamera() const;
 	private:

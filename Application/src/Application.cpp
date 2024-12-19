@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 #include <rlImGui.h>
+#include "ImGuiLib.hpp"
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -114,6 +115,22 @@ void Application::UpdateRendering() {
 void Application::UpdateUI() {
 	static bool showDemo = true;
 	if (showDemo) ImGui::ShowDemoWindow(&showDemo);
+
+	ImGui::SetNextWindowSize({300, 200}, ImGuiCond_Once);
+	ImGui::Begin("Camera");
+	{
+		FYC::Vec2 pos = m_Camera.GetPosition();
+		if (ImGuiLib::DragReal2("Position", pos.data, 0.1)) {
+			m_Camera.SetPosition(pos);
+		}
+
+		FYC::Real zoom = m_Camera.GetZoom();
+		if (ImGuiLib::DragReal("Zoom", &zoom)) {
+			m_Camera.SetZoom(zoom);
+		}
+	}
+	ImGui::End();
+
 }
 
 Application::~Application() {
