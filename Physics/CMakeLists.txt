@@ -34,6 +34,10 @@ target_precompile_headers(Physics PUBLIC
 		<vector>
 		<stack>
 		<queue>
+		<any>
+		<optional>
+		<variant>
+		<tuple>
 
 		# C-Types Helpers
 		<cstdint>
