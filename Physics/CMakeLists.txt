@@ -5,6 +5,8 @@ set(PHYSICS_SRC
 		src/Physics.cpp
 		src/Math.cpp
 		include/Physics/Math.hpp
+		src/Particle.cpp
+		include/Physics/Particle.hpp
 )
 
 add_library(Physics STATIC ${PHYSICS_SRC})
