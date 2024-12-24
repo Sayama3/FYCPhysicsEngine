@@ -24,13 +24,20 @@ namespace FYC {
 	public:
 		void AddConstantAcceleration(const Vec2& constantAcceleration);
 		void SubConstantAcceleration(const Vec2& constantAcceleration);
+		void SetConstantAcceleration(const Vec2& constantAcceleration);
+		[[nodiscard]] Vec2 GetConstantAccelerations() const {return m_ConstantAccelerations;}
 
 		void AddAcceleration(const Vec2& acceleration);
 		void SubAcceleration(const Vec2& acceleration);
+		void SetAcceleration(const Vec2& acceleration);
+		[[nodiscard]] Vec2 GetAcceleration() const {return m_ConstantAccelerations;}
 	public:
-		[[nodiscard]] Vec2 GetPosition() const {return m_Position;}
-		[[nodiscard]] Vec2 GetVelocity() const {return m_Velocity;}
-		[[nodiscard]] Vec2 GetConstantAccelerations() const {return m_ConstantAccelerations;}
+		void SetPosition(const Vec2& position);
+		[[nodiscard]] Vec2 GetPosition() const;
+
+		void SetVelocity(const Vec2& velocity);
+		[[nodiscard]] Vec2 GetVelocity() const;
+
 	public:
 		void swap(Particle& other) noexcept;
 	public:

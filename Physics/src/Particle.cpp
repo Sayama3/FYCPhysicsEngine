@@ -37,6 +37,10 @@ namespace FYC {
 		m_ConstantAccelerations -= constantAcceleration;
 	}
 
+	void Particle::SetConstantAcceleration(const Vec2 &constantAcceleration) {
+		m_ConstantAccelerations = constantAcceleration;
+	}
+
 	void Particle::AddAcceleration(const Vec2 &acceleration) {
 		m_SummedAccelerations += acceleration;
 	}
@@ -44,6 +48,16 @@ namespace FYC {
 	void Particle::SubAcceleration(const Vec2 &acceleration) {
 		m_SummedAccelerations -= acceleration;
 	}
+
+	void Particle::SetAcceleration(const Vec2 &acceleration) {
+		m_SummedAccelerations = acceleration;
+	}
+
+	void Particle::SetPosition(const Vec2 &position) {m_Position = position;}
+	Vec2 Particle::GetPosition() const {return m_Position;}
+
+	void Particle::SetVelocity(const Vec2 &velocity) {m_Velocity = velocity;}
+	Vec2 Particle::GetVelocity() const {return m_Velocity;}
 
 	void Particle::swap(Particle& other) noexcept
 	{
