@@ -19,6 +19,7 @@ target_precompile_headers(Physics PUBLIC
 		<algorithm>
 		<memory>
 		<source_location>
+		<iterator>
 
 		# Exception related stuff
 		<exception>
@@ -43,6 +44,7 @@ target_precompile_headers(Physics PUBLIC
 		<cstdint>
 		<cstring>
 		<cmath>
+		<cstddef>
 )
 
 if(FYC_DOUBLE)
