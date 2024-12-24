@@ -17,6 +17,11 @@ namespace FYC {
 		Particle(const Vec2& position, const Vec2& velocity);
 		Particle(const Vec2& position, const Vec2& velocity, const Vec2& constantAcceleration);
 	public:
+		Particle(Particle&& other) noexcept;
+		Particle& operator=(Particle&& other) noexcept;
+		Particle(const Particle&) = default;
+		Particle& operator=(const Particle&) = default;
+	public:
 		void AddConstantAcceleration(const Vec2& constantAcceleration);
 		void SubConstantAcceleration(const Vec2& constantAcceleration);
 
@@ -26,6 +31,8 @@ namespace FYC {
 		[[nodiscard]] Vec2 GetPosition() const {return m_Position;}
 		[[nodiscard]] Vec2 GetVelocity() const {return m_Velocity;}
 		[[nodiscard]] Vec2 GetConstantAccelerations() const {return m_ConstantAccelerations;}
+	public:
+		void swap(Particle& other) noexcept;
 	public:
 		std::any Data;
 	private:
