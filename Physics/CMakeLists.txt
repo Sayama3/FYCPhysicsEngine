@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.16) # Precompiled header available
 
 set(PHYSICS_SRC
-		include/Physics/Physics.hpp
-		src/Physics.cpp
 		src/Math.cpp
 		include/Physics/Math.hpp
 		src/Particle.cpp
