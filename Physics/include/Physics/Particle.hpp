@@ -7,9 +7,11 @@
 #include "Physics/Math.hpp"
 
 namespace FYC {
+	class World;
 
 	class Particle
 	{
+		friend class World;
 	public:
 		Particle();
 		~Particle();
