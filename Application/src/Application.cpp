@@ -14,15 +14,14 @@
 #include <emscripten/emscripten.h>
 #endif
 
-Application::Application(int width, int height, const std::string& name)
-	: m_Width(width), m_Height(height), m_Camera(m_Width, m_Height)
-{
+Application::Application(int width, int height, const std::string &name)
+	: m_Width(width), m_Height(height), m_Camera(m_Width, m_Height) {
 	// Initialization
 	//--------------------------------------------------------------------------------------
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);    // Window configuration flags
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE); // Window configuration flags
 	InitWindow(width, height, name.c_str());
 
-	rlImGuiSetup(true); 	// sets up ImGui with ether a dark or light default theme
+	rlImGuiSetup(true); // sets up ImGui with either a dark or light default theme
 }
 
 #if defined(PLATFORM_WEB)
@@ -36,18 +35,17 @@ void Application::Run() {
 #if defined(PLATFORM_WEB)
 	emscripten_set_main_loop_arg(&UpdateLoop, this, 0, 1);
 #else
-	SetTargetFPS(60);   // Set our game to run at 60 frames-per-secon
+	SetTargetFPS(60); // Set our game to run at 60 frames-per-secon
 	//--------------------------------------------------------------------------------------
 	// Main game loop
-	while (!WindowShouldClose())    // Detect window close button or ESC key
+	while (!WindowShouldClose()) // Detect window close button or ESC key
 	{
 		Update();
 	}
 #endif
 }
 
-void Application::Update()
-{
+void Application::Update() {
 	// Logic such as Physics or Camera Update here
 	//----------------------------------------------------------------------------------
 
@@ -69,47 +67,53 @@ void Application::Update()
 
 	EndMode2D();
 
-	rlImGuiBegin();			// starts the ImGui content mode. Make all ImGui calls after this
+	rlImGuiBegin(); // starts the ImGui content mode. Make all ImGui calls after this
 	UpdateUI();
 	m_ImGuiIsActive = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsAnyItemActive();
-	rlImGuiEnd();			// ends the ImGui content mode. Make all ImGui calls before this
+	rlImGuiEnd(); // ends the ImGui content mode. Make all ImGui calls before this
 
 	EndDrawing();
 	//----------------------------------------------------------------------------------
 }
 
-void Application::UpdateLogic()
-{
+void Application::UpdateLogic() {
 	m_Camera.SetViewport(m_Width, m_Height);
 
-	if (!m_ImGuiIsActive)
-	{
+	if (!m_ImGuiIsActive) {
 		if (IsKeyDown(KEY_R)) {
-			m_Camera.SetPosition({0,0});
+			m_Camera.SetPosition({0, 0});
 			m_Camera.SetZoom(static_cast<FYC::Real>(m_Height) * 0.2f);
 		} else {
 			FYC::Vec2 movement{};
 
-			if (IsKeyDown(KeyboardKey::KEY_W) || IsKeyDown(KeyboardKey::KEY_UP))	movement += {+0, -1};
-			if (IsKeyDown(KeyboardKey::KEY_S) || IsKeyDown(KeyboardKey::KEY_DOWN))	movement += {+0, +1};
-			if (IsKeyDown(KeyboardKey::KEY_D) || IsKeyDown(KeyboardKey::KEY_RIGHT))	movement += {+1, +0};
-			if (IsKeyDown(KeyboardKey::KEY_A) || IsKeyDown(KeyboardKey::KEY_LEFT))	movement += {-1, +0};
+			if (IsKeyDown(KeyboardKey::KEY_W) || IsKeyDown(KeyboardKey::KEY_UP)) movement += {+0, -1};
+			if (IsKeyDown(KeyboardKey::KEY_S) || IsKeyDown(KeyboardKey::KEY_DOWN)) movement += {+0, +1};
+			if (IsKeyDown(KeyboardKey::KEY_D) || IsKeyDown(KeyboardKey::KEY_RIGHT)) movement += {+1, +0};
+			if (IsKeyDown(KeyboardKey::KEY_A) || IsKeyDown(KeyboardKey::KEY_LEFT)) movement += {-1, +0};
 
 			Vector2 mouseWheel = GetMouseWheelMoveV();
 			FYC::Real zoom = 1 + mouseWheel.y * m_CameraZoomSpeed;
 
-			bool isMovingFast = IsKeyDown(KeyboardKey::KEY_LEFT_SHIFT) || IsKeyDown(KeyboardKey::KEY_RIGHT_SHIFT) || IsKeyDown(KeyboardKey::KEY_KP_0);
+			bool isMovingFast = IsKeyDown(KeyboardKey::KEY_LEFT_SHIFT) || IsKeyDown(KeyboardKey::KEY_RIGHT_SHIFT) ||
+			                    IsKeyDown(KeyboardKey::KEY_KP_0);
 			FYC::Real cameraSpeed = isMovingFast ? m_CameraMoveFastSpeed : m_CameraMoveSpeed;
 
 			m_Camera.Move(movement * (GetFrameTime() * cameraSpeed));
 			m_Camera.MultiplyZoom(zoom);
 		}
 	}
+
+	if (m_PhysicsMode == PhysicsMode::Play) {
+		m_WorldPlay.Step(GetFrameTime());
+	}
 }
 
 void Application::UpdateRendering() {
-	DrawCircleV({0.0f,-1.5f},0.5f, Color{20, 30, 200, 255});
-	DrawRectangleV({-0.5,-0.5},{1,1}, Color{200, 30, 20, 255});
+	for (const auto& particle : GetWorld()) {
+		if (particle.Data.type() != typeid(Color)) continue;
+		auto pos = particle.GetPosition();
+		DrawCircleV({pos.x, pos.y}, 0.25f, std::any_cast<Color>(particle.Data));
+	}
 }
 
 void Application::UpdateUI() {
@@ -117,8 +121,7 @@ void Application::UpdateUI() {
 	if (showDemo) ImGui::ShowDemoWindow(&showDemo);
 
 	ImGui::SetNextWindowSize({300, 200}, ImGuiCond_Once);
-	ImGui::Begin("Camera");
-	{
+	ImGui::Begin("Camera"); {
 		FYC::Vec2 pos = m_Camera.GetPosition();
 		if (ImGuiLib::DragReal2("Position", pos.data, 0.1)) {
 			m_Camera.SetPosition(pos);
@@ -131,12 +134,75 @@ void Application::UpdateUI() {
 	}
 	ImGui::End();
 
+	ImGui::SetNextWindowSize({400, 400}, ImGuiCond_Once);
+	ImGui::Begin("Physics"); {
+		if (m_PhysicsMode != PhysicsMode::Edit) {
+			if (ImGui::Button("Stop")) {
+				m_PhysicsMode = PhysicsMode::Edit;
+			}
+		} else {
+			if (ImGui::Button("Play")) {
+				m_PhysicsMode = PhysicsMode::Play;
+				m_WorldPlay = m_WorldEdit;
+			}
+		}
+
+		if (m_PhysicsMode != PhysicsMode::Edit) {
+			bool isPause = m_PhysicsMode == PhysicsMode::Pause;
+			if (ImGui::Checkbox("Pause", &isPause)) {
+				m_PhysicsMode = isPause ? PhysicsMode::Pause : PhysicsMode::Play;
+			}
+		}
+
+		if (ImGui::Button("Add Particle")) {
+			auto p = GetWorld().AddParticle();
+			p->AddConstantAcceleration({0, 10});
+			p->Data = Color{static_cast<uint8_t>(rand() % 256), static_cast<uint8_t>(rand() % 256), static_cast<uint8_t>(rand() % 256), 255};
+		}
+
+		ImGui::Separator();
+
+		std::vector<FYC::World::ID> toDelete;
+
+		// Adding this variable to prevent removing object from the wrong world.
+		auto& currentWorld = GetWorld();
+		ImGui::PushID(&currentWorld);
+		for (auto it = currentWorld.begin() ; it != currentWorld.end(); ++it) {
+			FYC::Particle& particle = *it;
+			ImGui::PushID(reinterpret_cast<void*>(it.GetID()));
+			auto position = particle.GetPosition();
+			if (ImGuiLib::DragReal2("Position", position.data, 0.1)) particle.SetPosition(position);
+			auto velocity = particle.GetVelocity();
+			if (ImGuiLib::DragReal2("Velocity", velocity.data, 0.1)) particle.SetVelocity(velocity);
+			FYC::Vec2 acc = particle.GetConstantAccelerations();
+			if (ImGuiLib::DragReal2("Acceleration", acc.data, 0.1)) particle.SetConstantAcceleration(acc);
+
+			if (particle.Data.type() == typeid(Color)) {
+				Color color = std::any_cast<Color>(particle.Data);
+				float color3[3] = {color.r / 255.f, color.g / 255.f, color.b / 255.f};
+				if (ImGui::ColorEdit3("Color", color3, ImGuiColorEditFlags_Uint8)) {
+					particle.Data = Color{(unsigned char)(color3[0]*255), (unsigned char)(color3[1]*255), (unsigned char)(color3[2]*255), 255};
+				}
+			}
+			if (ImGui::Button("Delete")) {
+				toDelete.push_back(it.GetID());
+			}
+			ImGui::Separator();
+			ImGui::PopID();
+		}
+		ImGui::PopID();
+
+		for (const FYC::World::ID id : toDelete) {
+			currentWorld.RemoveParticle(id);
+		}
+	}
+	ImGui::End();
 }
 
 Application::~Application() {
 	// De-Initialization
 	//--------------------------------------------------------------------------------------
-	rlImGuiShutdown();    // cleans up ImGui
-	CloseWindow();        // Close window and OpenGL context
+	rlImGuiShutdown(); // cleans up ImGui
+	CloseWindow(); // Close window and OpenGL context
 	//--------------------------------------------------------------------------------------
 }
