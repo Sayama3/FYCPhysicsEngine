@@ -44,13 +44,13 @@ namespace ImGuiLib
 	inline static bool InputReal(const char* label, FYC::Real* v, FYC::Real step = 0.0f, FYC::Real step_fast = 0.0f, const char* format = "%.3f", ImGuiInputTextFlags flags = 0) {
     	return ImGui::InputScalar(label, ImGuiRealDataType, (void*)v, (void*)(step > 0.0f ? &step : NULL), (void*)(step_fast > 0.0f ? &step_fast : NULL), format, flags);
 	}
-	inline static bool InputReal2(const char* label, FYC::Real v[2], const char* format = "%.3f", ImGuiSliderFlags flags = 0) {
+	inline static bool InputReal2(const char* label, FYC::Real v[2], const char* format = "%.3f", ImGuiInputTextFlags flags = 0) {
     	return ImGui::InputScalarN(label, ImGuiRealDataType, v, 2, NULL, NULL, format, flags);
 	}
-	inline static bool InputReal3(const char* label, FYC::Real v[3], const char* format = "%.3f", ImGuiSliderFlags flags = 0) {
+	inline static bool InputReal3(const char* label, FYC::Real v[3], const char* format = "%.3f", ImGuiInputTextFlags flags = 0) {
     	return ImGui::InputScalarN(label, ImGuiRealDataType, v, 3, NULL, NULL, format, flags);
 	}
-	inline static bool InputReal4(const char* label, FYC::Real v[4], const char* format = "%.3f", ImGuiSliderFlags flags = 0) {
+	inline static bool InputReal4(const char* label, FYC::Real v[4], const char* format = "%.3f", ImGuiInputTextFlags flags = 0) {
 		return ImGui::InputScalarN(label, ImGuiRealDataType, v, 4, NULL, NULL, format, flags);
 	}
 
