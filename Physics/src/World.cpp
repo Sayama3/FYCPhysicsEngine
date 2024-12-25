@@ -118,11 +118,35 @@ namespace FYC {
 
 	void World::Step(Real stepTime)
 	{
-		for (auto& [id, particle] : m_Particles)
+		// Integration
+		for (auto& particle : *this)
 		{
 			particle.m_Position += particle.m_Velocity * stepTime;
 			particle.m_Velocity += particle.m_ConstantAccelerations * stepTime + particle.m_SummedAccelerations * stepTime;
 			particle.m_SummedAccelerations = Vec2{};
+		}
+
+		// Collision Detection
+		if (const AABB* aabb = std::get_if<AABB>(&Bounds))
+		{
+			for (auto& particle : *this)
+			{
+				if (particle.m_Position.x < aabb->Min.x) {
+					particle.m_Position.x = aabb->Min.x;
+					particle.m_Velocity.x *= -1;
+				} else if (particle.m_Position.x > aabb->Max.x) {
+					particle.m_Position.x = aabb->Max.x;
+					particle.m_Velocity.x *= -1;
+				}
+
+				if (particle.m_Position.y < aabb->Min.y) {
+					particle.m_Position.y = aabb->Min.y;
+					particle.m_Velocity.y *= -1;
+				} else if (particle.m_Position.y > aabb->Max.y) {
+					particle.m_Position.y = aabb->Max.y;
+					particle.m_Velocity.y *= -1;
+				}
+			}
 		}
 	}
 } // FYC

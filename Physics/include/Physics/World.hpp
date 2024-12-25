@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Physics/Math.hpp"
+#include "Physics/AABB.hpp"
 #include "Physics/Particle.hpp"
 
 namespace FYC {
@@ -69,6 +70,8 @@ namespace FYC {
 	private:
 		std::unordered_map<ID, Particle> m_Particles;
 		ID m_IDGenerator{0ull};
+	public:
+		std::variant<std::monostate, AABB> Bounds;
 	};
 
 	static_assert(std::forward_iterator<World::WorldIterator>);

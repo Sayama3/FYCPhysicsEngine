@@ -114,6 +114,11 @@ void Application::UpdateRendering() {
 		auto pos = particle.GetPosition();
 		DrawCircleV({pos.x, pos.y}, 0.25f, std::any_cast<Color>(particle.Data));
 	}
+
+	if (const FYC::AABB* aabb = std::get_if<FYC::AABB>(&GetWorld().Bounds)) {
+		const auto size = aabb->GetSize();
+		DrawRectangleLinesEx(Rectangle{aabb->Min.x, aabb->Min.y, size.x, size.y}, 0.05, {0,180, 0, 160});
+	}
 }
 
 void Application::UpdateUI() {
@@ -153,6 +158,32 @@ void Application::UpdateUI() {
 				m_PhysicsMode = isPause ? PhysicsMode::Pause : PhysicsMode::Play;
 			}
 		}
+
+		ImGui::Spacing();
+
+		if (FYC::AABB* aabb = std::get_if<FYC::AABB>(&GetWorld().Bounds)) {
+			if (ImGui::Button("Remove Bounds")) {
+				GetWorld().Bounds = std::monostate{};
+			} else {
+				bool changed = false;
+				bool posSizeChanged = false;
+				changed |= ImGuiLib::DragReal2("Min AABB", aabb->Min.data, 0.1);
+				changed |= ImGuiLib::DragReal2("Max AABB", aabb->Max.data, 0.1);
+				ImGui::Separator();
+				auto pos = aabb->GetCenter();
+				auto size = aabb->GetSize();
+				changed |= posSizeChanged |= ImGuiLib::DragReal2("Position AABB", pos.data, 0.1);
+				changed |= posSizeChanged |= ImGuiLib::DragReal2("Size AABB", size.data, 0.1);
+				if (posSizeChanged) *aabb = FYC::AABB::FromCenterSize(pos, size);
+				if (changed) aabb->Validate();
+			}
+		} else {
+			if (ImGui::Button("Add Bounds")) {
+				GetWorld().Bounds = FYC::AABB::FromCenterSize({0,0}, {5, 5});
+			}
+		}
+
+		ImGui::Spacing();
 
 		if (ImGui::Button("Add Particle")) {
 			auto p = GetWorld().AddParticle();
