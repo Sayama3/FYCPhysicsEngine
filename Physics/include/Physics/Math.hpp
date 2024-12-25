@@ -52,8 +52,8 @@ namespace FYC {
 		Vec2& operator /=(Real value) {Real inv = Real(1) / value; *this *= inv; return *this;}
 		[[nodiscard]] Vec2 operator /(Real value) const {Vec2 result{*this}; result /= value; return result;}
 
-		[[nodiscard]] Real& operator[](unsigned int index) {return data[index];}
-		[[nodiscard]] const Real& operator[](unsigned int index) const  {return data[index];}
+		[[nodiscard]] Real& operator[](const unsigned int index) {return data[index];}
+		[[nodiscard]] const Real& operator[](const unsigned int index) const  {return data[index];}
 	};
 
 	struct Mat2x2
@@ -129,16 +129,16 @@ namespace FYC {
 		inline static constexpr Real deg2rad {pi / static_cast<Real>(180)};
 		inline static constexpr Real rad2deg {static_cast<Real>(180) / pi};
 
-		Real Dot(const Vec2& a, const Vec2& b);
-		Real MagnitudeSqr(const Vec2& vec);
-		Real Magnitude(const Vec2& vec);
-		Vec2 Normalize(const Vec2& vec);
+		[[nodiscard]] Real Dot(const Vec2& a, const Vec2& b);
+		[[nodiscard]] Real MagnitudeSqr(const Vec2& vec);
+		[[nodiscard]] Real Magnitude(const Vec2& vec);
+		[[nodiscard]] Vec2 Normalize(const Vec2& vec);
 		void NormalizeInPlace(Vec2& vec);
 
-		Real Determinant(const Mat2x2& matrix);
-		Mat2x2 Inverse(const Mat2x2& matrix);
-		Mat2x2 Transpose(const Mat2x2& matrix);
+		[[nodiscard]] Real Determinant(const Mat2x2& matrix);
+		[[nodiscard]] Mat2x2 Inverse(const Mat2x2& matrix);
+		[[nodiscard]] Mat2x2 Transpose(const Mat2x2& matrix);
 
-		Mat2x2 Rotation(Real radianAngle);
+		[[nodiscard]] Mat2x2 Rotation(Real radianAngle);
 	}
 } // FYC
