@@ -121,8 +121,8 @@ namespace FYC {
 		// Integration
 		for (auto& particle : *this)
 		{
-			particle.m_Position += particle.m_Velocity * stepTime;
-			particle.m_Velocity += particle.m_ConstantAccelerations * stepTime + particle.m_SummedAccelerations * stepTime;
+			particle.SetPosition(particle.GetPosition() + particle.m_Velocity * stepTime);
+			particle.SetVelocity(particle.GetVelocity() + particle.m_ConstantAccelerations * stepTime + particle.m_SummedAccelerations * stepTime);
 			particle.m_SummedAccelerations = Vec2{};
 		}
 
@@ -131,20 +131,33 @@ namespace FYC {
 		{
 			for (auto& particle : *this)
 			{
-				if (particle.m_Position.x < aabb->Min.x) {
-					particle.m_Position.x = aabb->Min.x;
-					particle.m_Velocity.x *= -1;
-				} else if (particle.m_Position.x > aabb->Max.x) {
-					particle.m_Position.x = aabb->Max.x;
-					particle.m_Velocity.x *= -1;
+				bool changed = false;
+				Vec2 position = particle.GetPosition();
+				Vec2 velocity = particle.GetVelocity();
+
+				if (position.x < aabb->Min.x) {
+					position.x = aabb->Min.x;
+					velocity.x *= -1;
+					changed = true;
+				} else if (position.x > aabb->Max.x) {
+					position.x = aabb->Max.x;
+					velocity.x *= -1;
+					changed = true;
 				}
 
-				if (particle.m_Position.y < aabb->Min.y) {
-					particle.m_Position.y = aabb->Min.y;
-					particle.m_Velocity.y *= -1;
-				} else if (particle.m_Position.y > aabb->Max.y) {
-					particle.m_Position.y = aabb->Max.y;
-					particle.m_Velocity.y *= -1;
+				if (position.y < aabb->Min.y) {
+					position.y = aabb->Min.y;
+					velocity.y *= -1;
+					changed = true;
+				} else if (position.y > aabb->Max.y) {
+					position.y = aabb->Max.y;
+					velocity.y *= -1;
+					changed = true;
+				}
+
+				if (changed) {
+					particle.SetPosition(position);
+					particle.SetVelocity(velocity);
 				}
 			}
 		}
