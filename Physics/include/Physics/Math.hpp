@@ -38,13 +38,13 @@ namespace FYC {
 		[[nodiscard]] Vec2 operator +(Vec2 other) const {other += *this; return other;}
 
 		Vec2& operator -=(const Vec2& other) {*this += -other; return *this;}
-		[[nodiscard]] Vec2 operator -(Vec2 other) const {other -= *this; return other;}
+		[[nodiscard]] Vec2 operator -(const Vec2& other) const {Vec2 result(*this); result -= other; return result;}
 
 		Vec2& operator +=(Real value) {*this += Vec2(value); return *this;}
 		[[nodiscard]] Vec2 operator +(Real value) const {Vec2 result{*this}; result += Vec2{value}; return result;}
 
 		Vec2& operator -=(Real value) {*this += -value; return *this;}
-		[[nodiscard]] Vec2 operator -(Real value) const {Vec2 result{*this}; result += -value; return result;}
+		[[nodiscard]] Vec2 operator -(Real value) const {Vec2 result{*this}; result -= value; return result;}
 
 		Vec2& operator *=(Real value) {x *= value; y *= value; return *this;}
 		[[nodiscard]] Vec2 operator *(Real value) const {Vec2 result{*this}; result *= value; return result;}
