@@ -117,6 +117,7 @@ namespace FYC {
 	}
 
 	void World::FindParticlesCollisions() {
+		static_assert(std::is_same<Particle::Shape, std::variant<Circle, AABB>>());
 		m_Collisions.clear();
 		for (auto it = begin(); it != end(); ++it) {
 			auto nextIt = it;
@@ -125,9 +126,14 @@ namespace FYC {
 				Collision collision;
 				auto a = it.GetID() < nextIt.GetID() ? it : nextIt;
 				auto b = it.GetID() < nextIt.GetID() ? nextIt : it;
+
 				{
 					Circle ca, cb;
+					AABB ra, rb;
 					if (a->HasShape<Circle>(ca) && b->HasShape<Circle>(cb)) collision = CollisionDetector::Collide(ca,cb);
+					else if (a->HasShape<AABB>(ra) && b->HasShape<AABB>(rb)) collision = CollisionDetector::Collide(ra,rb);
+					else if (a->HasShape<AABB>(ra) && b->HasShape<Circle>(cb)) collision = CollisionDetector::Collide(ra,cb);
+					else if (a->HasShape<Circle>(ca) && b->HasShape<AABB>(rb)) collision = CollisionDetector::Collide(ca,rb);
 				}
 
 				if (collision) {
@@ -184,6 +190,8 @@ namespace FYC {
 	}
 
 	void World::FindAndResolveBoundsCollisions() {
+		static_assert(std::is_same<Particle::Shape, std::variant<Circle, AABB>>());
+
 		if (const AABB* boundsAABB = std::get_if<AABB>(&Bounds))
 		{
 			for (auto& particle : *this)
@@ -196,9 +204,12 @@ namespace FYC {
 				Vec2 halfSize{0};
 				AABB particleAABB = AABB::FromCenterHalfSize(position, halfSize);
 
-				if (const Circle* cirlce = std::get_if<Circle>(&particle.m_Shape)) {
-					halfSize = Vec2{cirlce->Radius};
+				if (const Circle* circle = std::get_if<Circle>(&particle.m_Shape)) {
+					halfSize = Vec2{circle->Radius};
 					particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+				} else if (const AABB* aabb = std::get_if<AABB>(&particle.m_Shape)) {
+					halfSize = aabb->GetHalfSize();
+					particleAABB = *aabb;
 				}
 
 				if (particleAABB.Min.x <= boundsAABB->Min.x) {

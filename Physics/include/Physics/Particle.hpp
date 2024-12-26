@@ -6,6 +6,7 @@
 
 #include "Physics/Math.hpp"
 #include "Physics/Circle.hpp"
+#include "Physics/AABB.hpp"
 
 namespace FYC {
 	class World;
@@ -14,7 +15,7 @@ namespace FYC {
 	{
 		friend class World;
 	public:
-		using Shape = std::variant<Circle>;
+		using Shape = std::variant<Circle, AABB>;
 	public:
 		Particle();
 		~Particle();
@@ -22,9 +23,12 @@ namespace FYC {
 		Particle(const Shape& shape, const Vec2& velocity);
 		Particle(const Shape& shape, const Vec2& velocity, const Vec2& constantAcceleration);
 	public:
-		static Particle CreateCircle(const Vec2& position, Real radius);
-		static Particle CreateCircle(const Vec2& position, Real radius, const Vec2& velocity);
-		static Particle CreateCircle(const Vec2& position, Real radius, const Vec2& velocity, const Vec2& constantAcceleration);
+		[[nodiscard]] static Particle CreateCircle(const Vec2& position, Real radius);
+		[[nodiscard]] static Particle CreateCircle(const Vec2& position, Real radius, const Vec2& velocity);
+		[[nodiscard]] static Particle CreateCircle(const Vec2& position, Real radius, const Vec2& velocity, const Vec2& constantAcceleration);
+		[[nodiscard]] static Particle CreateRectangle(const Vec2& position, const Vec2& size);
+		[[nodiscard]] static Particle CreateRectangle(const Vec2& position, const Vec2& size, const Vec2& velocity);
+		[[nodiscard]] static Particle CreateRectangle(const Vec2& position, const Vec2& size, const Vec2& velocity, const Vec2& constantAcceleration);
 	public:
 		Particle(Particle&& other) noexcept;
 		Particle& operator=(Particle&& other) noexcept;
@@ -51,8 +55,10 @@ namespace FYC {
 	public:
 		template<typename T>
 		[[nodiscard]] bool HasShape() const { return std::holds_alternative<T>(m_Shape); }
+
 		template<typename T>
 		bool HasShape(T& value) const { const T* valuePtr = nullptr; if ((valuePtr = std::get_if<T>(&m_Shape))) value = *valuePtr; return valuePtr; }
+
 		[[nodiscard]] std::optional<Real> GetCircleRadius() const;
 
 		/**
@@ -69,6 +75,23 @@ namespace FYC {
 		 * @return Whether the shape was a Circle or not
 		 */
 		bool TrySetCircleRadius(Real radius);
+
+		[[nodiscard]] std::optional<Vec2> GetRectangleSize() const;
+
+		/**
+		 * This function WILL set the shape to a Rectangle with a size as mentioned in parameter.
+		 * No matter what the shape was to begin with.
+		 * @param size The size of the rectangle
+		 */
+		void SetRectangleSize(const Vec2& size);
+
+		/**
+		 * This function will set the size of the rectangle only if the shape is currently a rectangle.
+		 * It will return whether it was a success or not.
+		 * @param size The size of the rectangle
+		 * @return Whether the shape was a Rectangle or not
+		 */
+		bool TrySetRectangleSize(const Vec2& size);
 	public:
 		std::any Data;
 	private:

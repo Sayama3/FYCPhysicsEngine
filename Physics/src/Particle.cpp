@@ -15,15 +15,15 @@ namespace FYC {
 	{
 	}
 
-	Particle::Particle(const Particle::Shape& shape) : m_Shape(shape)
+	Particle::Particle(const Shape& shape) : m_Shape(shape)
 	{
 	}
 
-	Particle::Particle(const Particle::Shape& shape, const Vec2 &velocity) : m_Shape(shape), m_Velocity(velocity)
+	Particle::Particle(const Shape& shape, const Vec2 &velocity) : m_Shape(shape), m_Velocity(velocity)
 	{
 	}
 
-	Particle::Particle(const Particle::Shape& shape, const Vec2 &velocity, const Vec2 &constantAcceleration) : m_Shape(shape), m_Velocity(velocity), m_ConstantAccelerations(constantAcceleration)
+	Particle::Particle(const Shape& shape, const Vec2 &velocity, const Vec2 &constantAcceleration) : m_Shape(shape), m_Velocity(velocity), m_ConstantAccelerations(constantAcceleration)
 	{
 	}
 
@@ -40,6 +40,21 @@ namespace FYC {
 	Particle Particle::CreateCircle(const Vec2& position, const Real radius, const Vec2 &velocity, const Vec2 &constantAcceleration)
 	{
 		return Particle{Circle{position, radius}, velocity, constantAcceleration};
+	}
+
+	Particle Particle::CreateRectangle(const Vec2& position, const Vec2& size)
+	{
+		return Particle{AABB::FromCenterSize(position, size)};
+	}
+
+	Particle Particle::CreateRectangle(const Vec2& position, const Vec2& size, const Vec2& velocity)
+	{
+		return Particle{AABB::FromCenterSize(position, size), velocity};
+	}
+
+	Particle Particle::CreateRectangle(const Vec2& position, const Vec2& size, const Vec2& velocity, const Vec2& constantAcceleration)
+	{
+		return Particle{AABB::FromCenterSize(position, size), velocity, constantAcceleration};
 	}
 
 	Particle::Particle(Particle&& other) noexcept
@@ -80,16 +95,22 @@ namespace FYC {
 	}
 
 	void Particle::SetPosition(const Vec2 &position) {
-		static_assert(std::is_same<Shape, std::variant<Circle>>());
+		static_assert(std::is_same<Shape, std::variant<Circle, AABB>>());
 		if (Circle *circle = std::get_if<Circle>(&m_Shape)) {
 			circle->Position = position;
+		}
+		else if(AABB* aabb = std::get_if<AABB>(&m_Shape)) {
+			*aabb = AABB::FromCenterSize(position, aabb->GetSize());
 		}
 	}
 
 	Vec2 Particle::GetPosition() const {
-		static_assert(std::is_same<Shape, std::variant<Circle>>());
+		static_assert(std::is_same<Shape, std::variant<Circle, AABB>>());
 		if (const Circle *circle = std::get_if<Circle>(&m_Shape)) {
 			return circle->Position;
+		}
+		else if(const AABB* aabb = std::get_if<AABB>(&m_Shape)) {
+			return aabb->GetCenter();
 		}
 		return {NAN, NAN};
 	}
@@ -125,6 +146,31 @@ namespace FYC {
 	{
 		if (Circle *circle = std::get_if<Circle>(&m_Shape)) {
 			circle->Radius = radius;
+			return true;
+		}
+		return false;
+	}
+
+	std::optional<Vec2> Particle::GetRectangleSize() const {
+		if (const AABB* aabb = std::get_if<AABB>(&m_Shape)) {
+			return aabb->GetSize();
+		}
+		return std::nullopt;
+	}
+
+	void Particle::SetRectangleSize(const Vec2 &size) {
+		if (AABB* aabb = std::get_if<AABB>(&m_Shape)) {
+			*aabb = AABB::FromCenterSize(aabb->GetCenter(), size);
+		} else {
+			const Vec2 particlePosition = GetPosition();
+			m_Shape = AABB::FromCenterSize(particlePosition, size);
+		}
+
+	}
+
+	bool Particle::TrySetRectangleSize(const Vec2 &size) {
+		if (AABB* aabb = std::get_if<AABB>(&m_Shape)) {
+			*aabb = AABB::FromCenterSize(aabb->GetCenter(), size);
 			return true;
 		}
 		return false;

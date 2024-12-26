@@ -115,9 +115,13 @@ void Application::UpdateRendering() {
 		if (particle.Data.type() != typeid(Color)) continue;
 		auto pos = particle.GetPosition();
 
-		FYC::Circle circle;
-		if (particle.HasShape<FYC::Circle>(circle)) {
+		static_assert(std::is_same<FYC::Particle::Shape, std::variant<FYC::Circle, FYC::AABB>>());
+
+		if (FYC::Circle circle; particle.HasShape<FYC::Circle>(circle)) {
 			DrawCircleV({pos.x, pos.y}, circle.Radius, std::any_cast<Color>(particle.Data));
+		} else if (FYC::AABB rectangle; particle.HasShape<FYC::AABB>(rectangle)) {
+			const auto size = rectangle.GetSize();
+			DrawRectangleV({rectangle.Min.x, rectangle.Min.y}, {size.x, size.y}, std::any_cast<Color>(particle.Data));
 		}
 	}
 
@@ -192,12 +196,22 @@ void Application::UpdateUI() {
 
 		ImGui::Spacing();
 
-		if (ImGui::Button("Add Particle")) {
-			auto p = GetWorld().AddParticle();
-			p->SetPosition(FYC::Vec2{(rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r, (rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r});
-			p->SetVelocity(FYC::Vec2{(rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r, (rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r});
-			p->AddConstantAcceleration({0, 10});
-			p->Data = Color{static_cast<uint8_t>(rand() % 256), static_cast<uint8_t>(rand() % 256), static_cast<uint8_t>(rand() % 256), 255};
+		{
+			FYC::World::WorldIterator p;
+			if (ImGui::Button("Add Circle")) {
+				p = GetWorld().AddParticle(FYC::Particle::CreateCircle({}, 1));
+			}
+
+			if (ImGui::Button("Add Rectangle")) {
+				p = GetWorld().AddParticle(FYC::Particle::CreateRectangle({}, {1,1}));
+			}
+
+			if (p) {
+				p->SetPosition(FYC::Vec2{(rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r, (rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r});
+				p->SetVelocity(FYC::Vec2{(rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r, (rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r});
+				p->AddConstantAcceleration({0, 10});
+				p->Data = Color{static_cast<uint8_t>(rand() % 256), static_cast<uint8_t>(rand() % 256), static_cast<uint8_t>(rand() % 256), 255};
+			}
 		}
 
 		ImGui::Separator();
@@ -217,10 +231,25 @@ void Application::UpdateUI() {
 			FYC::Vec2 acc = particle.GetConstantAccelerations();
 			if (ImGuiLib::DragReal2("Acceleration", acc.data, 0.1)) particle.SetConstantAcceleration(acc);
 
+
+			static_assert(std::is_same<FYC::Particle::Shape, std::variant<FYC::Circle, FYC::AABB> >());
 			if (auto maybeRadius = particle.GetCircleRadius()) {
-				FYC::Real radius = maybeRadius.value();
-				if (ImGuiLib::DragReal("Radius", &radius, 0.01, 0.01, REAL_MAX, "%.2f")) {
-					particle.SetCircleRadius(radius);
+				if (ImGui::Button("Change to Rectangle")) {
+					particle.SetRectangleSize({1, 1});
+				} else {
+					FYC::Real radius = maybeRadius.value();
+					if (ImGuiLib::DragReal("Radius", &radius, 0.01, 0.01, REAL_MAX, "%.2f")) {
+						particle.TrySetCircleRadius(radius);
+					}
+				}
+			} else if (auto maybeSize = particle.GetRectangleSize()) {
+				if (ImGui::Button("Change to Circle")) {
+						particle.SetCircleRadius(1);
+				} else {
+					FYC::Vec2 size = maybeSize.value();
+					if (ImGuiLib::DragReal2("Size", size.data, 0.01, 0.01, REAL_MAX, "%.2f")) {
+						particle.TrySetRectangleSize(size);
+					}
 				}
 			}
 

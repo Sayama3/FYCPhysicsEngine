@@ -22,7 +22,10 @@ namespace FYC {
 
 	class CollisionDetector {
 	public:
-		static Collision Collide(const Circle& a, const Circle& b);
+		[[nodiscard]] static Collision Collide(const Circle& a, const Circle& b);
+		[[nodiscard]] static Collision Collide(const AABB& a, const AABB& b);
+		[[nodiscard]] static Collision Collide(const Circle& a, const AABB& b);
+		[[nodiscard]] static Collision Collide(const AABB& a, const Circle& b);
 	};
 
 } // FYC
