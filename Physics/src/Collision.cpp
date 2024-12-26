@@ -22,7 +22,26 @@ namespace FYC {
 	}
 
 	Collision CollisionDetector::Collide(const AABB &a, const AABB &b) {
-		return {{0,0}, {0,0}, 0, false};
+		const Vec2 maxSize = a.GetHalfSize() + b.GetHalfSize();
+		const Vec2 aToB = b.GetCenter() - a.GetCenter();
+		const Vec2 absAToB = {std::abs(aToB.x), std::abs(aToB.y)};
+
+		if (absAToB.x > maxSize.x || absAToB.y > maxSize.y) return {{0,0}, {0,0}, 0, false};
+
+		Vec2 distanceToMove = maxSize - absAToB;
+		Real interpenetration = std::min(distanceToMove.x, distanceToMove.y);
+		Vec2 point = a.GetCenter();
+		Vec2 normal = {};
+
+		if (distanceToMove.x < distanceToMove.y) {
+			normal = {-Math::Sign(aToB.x), 0};
+			point.x += aToB.x - (interpenetration * 0.5);
+		} else {
+			normal = {0, -Math::Sign(aToB.y)};
+			point.y += aToB.y - (interpenetration * 0.5);
+		}
+
+		return {point, normal, interpenetration, true};
 	}
 
 	Collision CollisionDetector::Collide(const Circle &a, const AABB &b) {
