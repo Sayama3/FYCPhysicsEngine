@@ -75,6 +75,10 @@ namespace FYC {
 		[[nodiscard]] const Particle* GetParticle(ID id) const;
 
 		void RemoveParticle(ID id);
+	private:
+		void FindParticlesCollisions();
+		void ResolveParticleCollisions();
+		void FindAndResolveBoundsCollisions();
 	public:
 		void Step(Real stepTime);
 	public:

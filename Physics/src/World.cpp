@@ -116,6 +116,119 @@ namespace FYC {
 		m_Particles.erase(id);
 	}
 
+	void World::FindParticlesCollisions() {
+		m_Collisions.clear();
+		for (auto it = begin(); it != end(); ++it) {
+			auto nextIt = it;
+			++nextIt;
+			for ( ;nextIt != end(); ++nextIt) {
+				Collision collision;
+				auto a = it.GetID() < nextIt.GetID() ? it : nextIt;
+				auto b = it.GetID() < nextIt.GetID() ? nextIt : it;
+				{
+					Circle ca, cb;
+					if (a->HasShape<Circle>(ca) && b->HasShape<Circle>(cb)) collision = Collider::Collide(ca,cb);
+				}
+
+				if (collision) {
+					m_Collisions[{a.GetID(), b.GetID()}] = collision;
+				}
+			}
+		}
+	}
+
+	void World::ResolveParticleCollisions() {
+		for (const auto& [pair, collision] : m_Collisions)
+		{
+			Particle* particleA = GetParticle(pair.first);
+			Particle* particleB = GetParticle(pair.second);
+
+			if (!particleA || !particleB) continue;
+
+			const Real inverseWeightA = 1; //TODO: Fetch the weight later on.
+			const Real inverseWeightB = 1; //TODO: Fetch the weight later on.
+			const Real totalInverseWeight = inverseWeightA + inverseWeightB;
+
+			if (totalInverseWeight <= 0) continue;
+
+			const Real rebound = 0.9;
+
+			const Vec2 velA = particleA->GetVelocity();
+			const Vec2 velB = particleB->GetVelocity();
+
+			const Real contactVelocity = Math::Dot(collision.CollisionNormal, velA - velB);
+
+			// Resolving velocity
+			if (contactVelocity <= 0 && totalInverseWeight > 0) {
+				const Real separatingVelocity = -contactVelocity * rebound;
+				const Real deltaVelocity = separatingVelocity - contactVelocity;
+
+				const Real separatingImpulse = deltaVelocity / totalInverseWeight;
+				const Vec2 directedSeparatedImpulsePerInvWeight = collision.CollisionNormal * separatingImpulse;
+
+				particleA->SetVelocity(velA + directedSeparatedImpulsePerInvWeight * inverseWeightA);
+				particleB->SetVelocity(velB - directedSeparatedImpulsePerInvWeight * inverseWeightB);
+			}
+
+			// Resolving Interpenetration
+			if (collision.Interpenetration > 0 && totalInverseWeight > 0) {
+				const Vec2 posA = particleA->GetPosition();
+				const Vec2 posB = particleB->GetPosition();
+
+				const Vec2 separatingMovementPerInverseWeight = collision.CollisionNormal * (collision.Interpenetration / totalInverseWeight);
+
+				particleA->SetPosition(posA + separatingMovementPerInverseWeight * inverseWeightA);
+				particleB->SetPosition(posB - separatingMovementPerInverseWeight * inverseWeightB);
+			}
+		}
+	}
+
+	void World::FindAndResolveBoundsCollisions() {
+		if (const AABB* boundsAABB = std::get_if<AABB>(&Bounds))
+		{
+			for (auto& particle : *this)
+			{
+				bool changed = false;
+				Vec2 position = particle.GetPosition();
+				Vec2 velocity = particle.GetVelocity();
+				Real rebound = 0.9;
+
+				Vec2 halfSize{0};
+				AABB particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+
+				if (const Circle* cirlce = std::get_if<Circle>(&particle.m_Shape)) {
+					halfSize = Vec2{cirlce->Radius};
+					particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+				}
+
+				if (particleAABB.Min.x <= boundsAABB->Min.x) {
+					position.x = boundsAABB->Min.x + halfSize.x;
+					if(velocity.x < 0) velocity.x *= -rebound;
+					changed = true;
+				} else if (particleAABB.Max.x >= boundsAABB->Max.x) {
+					position.x = boundsAABB->Max.x - halfSize.x;
+					if(velocity.x > 0) velocity.x *= -rebound;
+					changed = true;
+				}
+
+				if (particleAABB.Min.y <= boundsAABB->Min.y) {
+					position.y = boundsAABB->Min.y + halfSize.y;
+					if(velocity.y < 0) velocity.y *= -rebound;
+					changed = true;
+				} else if (particleAABB.Max.y >= boundsAABB->Max.y) {
+					position.y = boundsAABB->Max.y - halfSize.y;
+					if(velocity.y > 0) velocity.y *= -rebound;
+					changed = true;
+				}
+
+				if (changed) {
+					particle.SetPosition(position);
+					particle.SetVelocity(velocity);
+				}
+			}
+		}
+	}
+
 	void World::Step(Real stepTime)
 	{
 		// Integration
@@ -127,112 +240,12 @@ namespace FYC {
 		}
 
 		// Collision Detection
-
-		for (int iterations = 0; iterations < 10; ++iterations)
+		FindParticlesCollisions();
+		for (int iterations = 0; iterations < 50; ++iterations)
 		{
-			m_Collisions.clear();
-
-			for (auto it = begin(); it != end(); ++it) {
-				auto nextIt = it;
-				++nextIt;
-				for ( ;nextIt != end(); ++nextIt) {
-					Collision collision;
-					auto a = it.GetID() < nextIt.GetID() ? it : nextIt;
-					auto b = it.GetID() < nextIt.GetID() ? nextIt : it;
-					{
-						Circle ca, cb;
-						if (a->HasShape<Circle>(ca) && b->HasShape<Circle>(cb)) collision = Collider::Collide(ca,cb);
-					}
-
-					if (collision) {
-						m_Collisions[{a.GetID(), b.GetID()}] = collision;
-					}
-				}
-			}
-
-			for (const auto& [pair, collision] : m_Collisions)
-			{
-				Particle* particleA = GetParticle(pair.first);
-				Particle* particleB = GetParticle(pair.second);
-				if (!particleA || !particleB) continue;
-
-				float weightA = 0.5;
-				float weightB = 0.5;
-
-				Vec2 posA = particleA->GetPosition();
-				Vec2 movA = collision.CollisionNormal * (collision.Interpenetration * weightA + REAL_EPSILON);
-				posA += movA;
-
-				Vec2 posB = particleB->GetPosition();
-				Vec2 movB = collision.CollisionNormal * (collision.Interpenetration * weightB + REAL_EPSILON);
-				posB -= movB;
-
-
-				Vec2 velA = particleA->GetVelocity();
-				Vec2 velB = particleB->GetVelocity();
-
-				Vec2 normalVelocityA = collision.CollisionNormal * Math::Dot(collision.CollisionNormal, velA);
-				Vec2 normalVelocityB = collision.CollisionNormal * Math::Dot(collision.CollisionNormal, velB);
-
-				// Vec2 collisionVelocity = normalVelocityA - normalVelocityB;
-
-				Real reboundA = 0.85;
-				Real reboundB = 0.85;
-
-				velA -= normalVelocityA * (1 + reboundA);
-				velB -= normalVelocityB * (1 + reboundB);
-
-				particleA->SetPosition(posA);
-				particleA->SetVelocity(velA);
-
-				particleB->SetPosition(posB);
-				particleB->SetVelocity(velB);
-			}
-
-			if (const AABB* boundsAABB = std::get_if<AABB>(&Bounds))
-			{
-				for (auto& particle : *this)
-				{
-					bool changed = false;
-					Vec2 position = particle.GetPosition();
-					Vec2 velocity = particle.GetVelocity();
-					Real rebound = 0.9;
-
-					Vec2 halfSize{0};
-					AABB particleAABB = AABB::FromCenterHalfSize(position, halfSize);
-
-					if (const Circle* cirlce = std::get_if<Circle>(&particle.m_Shape)) {
-						halfSize = Vec2{cirlce->Radius};
-						particleAABB = AABB::FromCenterHalfSize(position, halfSize);
-					}
-
-					if (particleAABB.Min.x <= boundsAABB->Min.x) {
-						position.x = boundsAABB->Min.x + halfSize.x;
-						if(velocity.x < 0) velocity.x *= -rebound;
-						changed = true;
-					} else if (particleAABB.Max.x >= boundsAABB->Max.x) {
-						position.x = boundsAABB->Max.x - halfSize.x;
-						if(velocity.x > 0) velocity.x *= -rebound;
-						changed = true;
-					}
-
-					if (particleAABB.Min.y <= boundsAABB->Min.y) {
-						position.y = boundsAABB->Min.y + halfSize.y;
-						if(velocity.y < 0) velocity.y *= -rebound;
-						changed = true;
-					} else if (particleAABB.Max.y >= boundsAABB->Max.y) {
-						position.y = boundsAABB->Max.y - halfSize.y;
-						if(velocity.y > 0) velocity.y *= -rebound;
-						changed = true;
-					}
-
-					if (changed) {
-						particle.SetPosition(position);
-						particle.SetVelocity(velocity);
-					}
-				}
-			}
-
+			ResolveParticleCollisions();
+			FindAndResolveBoundsCollisions();
+			FindParticlesCollisions();
 			if (m_Collisions.size() == 0) break;
 		}
 	}
