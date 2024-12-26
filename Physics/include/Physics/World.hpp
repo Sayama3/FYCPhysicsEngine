@@ -49,6 +49,8 @@ namespace FYC {
 
 			pointer operator->();
 			const pointer operator->() const;
+
+			[[nodiscard]] explicit operator bool() const {return m_World && m_ParticleId != NULL_ID;}
 		public:
 			[[nodiscard]] ID GetID() const { return m_ParticleId; }
 			[[nodiscard]] World* GetWorld() const { return m_World; }
