@@ -127,7 +127,7 @@ namespace FYC {
 				auto b = it.GetID() < nextIt.GetID() ? nextIt : it;
 				{
 					Circle ca, cb;
-					if (a->HasShape<Circle>(ca) && b->HasShape<Circle>(cb)) collision = Collider::Collide(ca,cb);
+					if (a->HasShape<Circle>(ca) && b->HasShape<Circle>(cb)) collision = CollisionDetector::Collide(ca,cb);
 				}
 
 				if (collision) {

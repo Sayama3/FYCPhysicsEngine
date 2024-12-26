@@ -10,6 +10,8 @@
 #include <rlImGui.h>
 #include "ImGuiLib.hpp"
 
+using namespace FYC::Literal;
+
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
 #endif
@@ -192,6 +194,8 @@ void Application::UpdateUI() {
 
 		if (ImGui::Button("Add Particle")) {
 			auto p = GetWorld().AddParticle();
+			p->SetPosition(FYC::Vec2{(rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r, (rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r});
+			p->SetVelocity(FYC::Vec2{(rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r, (rand() / static_cast<FYC::Real>(RAND_MAX)) * 0.2_r - 0.1_r});
 			p->AddConstantAcceleration({0, 10});
 			p->Data = Color{static_cast<uint8_t>(rand() % 256), static_cast<uint8_t>(rand() % 256), static_cast<uint8_t>(rand() % 256), 255};
 		}

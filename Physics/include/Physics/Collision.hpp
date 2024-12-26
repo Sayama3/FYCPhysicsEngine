@@ -12,15 +12,15 @@
 namespace FYC {
 
 	struct Collision {
-		bool IsColliding;
-		Vec2 CollisionPoint;
+		Vec2 HalfWayInterpenetratingPoint;
 		Vec2 CollisionNormal;
 		Real Interpenetration;
+		bool IsColliding;
 
 		[[nodiscard]] explicit operator bool() const {return IsColliding;}
 	};
 
-	class Collider {
+	class CollisionDetector {
 	public:
 		static Collision Collide(const Circle& a, const Circle& b);
 	};
