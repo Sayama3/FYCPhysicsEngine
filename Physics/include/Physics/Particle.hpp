@@ -18,9 +18,9 @@ namespace FYC {
 	public:
 		Particle();
 		~Particle();
-		Particle(const Shape& circle);
-		Particle(const Shape& circle, const Vec2& velocity);
-		Particle(const Shape& circle, const Vec2& velocity, const Vec2& constantAcceleration);
+		Particle(const Shape& shape);
+		Particle(const Shape& shape, const Vec2& velocity);
+		Particle(const Shape& shape, const Vec2& velocity, const Vec2& constantAcceleration);
 	public:
 		static Particle CreateCircle(const Vec2& position, Real radius);
 		static Particle CreateCircle(const Vec2& position, Real radius, const Vec2& velocity);
