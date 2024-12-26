@@ -6,8 +6,8 @@
 
 namespace FYC {
 	// ========== WorldIterator ==========
-	World::WorldIterator::WorldIterator(World &world, uint64_t particleId) : m_World(&world), m_ParticleId(particleId) { }
-	World::WorldIterator::WorldIterator(World *world, uint64_t particleId) : m_World(world), m_ParticleId(particleId) { }
+	World::WorldIterator::WorldIterator(World &world, const uint64_t particleId) : m_World(&world), m_ParticleId(particleId) { }
+	World::WorldIterator::WorldIterator(World *world, const uint64_t particleId) : m_World(world), m_ParticleId(particleId) { }
 	World::WorldIterator::WorldIterator() = default;
 	World::WorldIterator::~WorldIterator() = default;
 
@@ -54,7 +54,7 @@ namespace FYC {
 		m_Collisions.reserve(1024);
 	}
 
-	World::World(uint64_t reserveParticleCount) {
+	World::World(const uint64_t reserveParticleCount) {
 		m_Particles.reserve(reserveParticleCount);
 		m_Collisions.reserve(reserveParticleCount);
 	}
