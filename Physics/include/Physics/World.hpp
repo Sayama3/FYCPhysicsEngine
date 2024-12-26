@@ -23,7 +23,6 @@ namespace FYC {
 	class World {
 	public:
 		using ID = uint64_t;
-		using PairID = std::pair<ID, ID>;
 		inline static constexpr ID NULL_ID = ~0ull;
 		class WorldIterator {
 		public:
@@ -79,6 +78,9 @@ namespace FYC {
 		void FindParticlesCollisions();
 		void ResolveParticleCollisions();
 		void FindAndResolveBoundsCollisions();
+
+		void Integrate(Real stepTime);
+
 	public:
 		void Step(Real stepTime);
 	public:
@@ -86,7 +88,7 @@ namespace FYC {
 		[[nodiscard]] WorldIterator end() {return WorldIterator{*this, NULL_ID};}
 	private:
 		std::unordered_map<ID, Particle> m_Particles;
-		std::unordered_map<PairID, Collision, PairHasher> m_Collisions;
+		std::unordered_map<std::pair<ID, ID>, Collision, PairHasher> m_Collisions;
 		ID m_IDGenerator{0ull};
 	public:
 		std::variant<std::monostate, AABB> Bounds;

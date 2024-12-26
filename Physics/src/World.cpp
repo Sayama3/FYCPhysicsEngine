@@ -229,15 +229,19 @@ namespace FYC {
 		}
 	}
 
-	void World::Step(Real stepTime)
-	{
-		// Integration
+	void World::Integrate(Real stepTime) {
 		for (auto& particle : *this)
 		{
 			particle.SetPosition(particle.GetPosition() + particle.m_Velocity * stepTime);
 			particle.SetVelocity(particle.GetVelocity() + particle.m_ConstantAccelerations * stepTime + particle.m_SummedAccelerations * stepTime);
 			particle.m_SummedAccelerations = Vec2{};
 		}
+	}
+
+	void World::Step(Real stepTime)
+	{
+		// Integration
+		Integrate(stepTime);
 
 		// Collision Detection
 		FindParticlesCollisions();
