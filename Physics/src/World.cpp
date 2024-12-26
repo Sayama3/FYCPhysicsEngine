@@ -49,14 +49,14 @@ namespace FYC {
 	}
 
 	// ========== World ==========
-	World::World()
-	{
+	World::World() {
 		m_Particles.reserve(1024);
+		m_Collisions.reserve(1024);
 	}
 
-	World::World(uint64_t reserveParticleCount)
-	{
+	World::World(uint64_t reserveParticleCount) {
 		m_Particles.reserve(reserveParticleCount);
+		m_Collisions.reserve(reserveParticleCount);
 	}
 
 	World::~World() = default;
@@ -127,47 +127,113 @@ namespace FYC {
 		}
 
 		// Collision Detection
-		if (const AABB* boundsAABB = std::get_if<AABB>(&Bounds))
+
+		for (int iterations = 0; iterations < 10; ++iterations)
 		{
-			for (auto& particle : *this)
-			{
-				bool changed = false;
-				Vec2 position = particle.GetPosition();
-				Vec2 velocity = particle.GetVelocity();
+			m_Collisions.clear();
 
-				Vec2 halfSize{0};
-				AABB particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+			for (auto it = begin(); it != end(); ++it) {
+				auto nextIt = it;
+				++nextIt;
+				for ( ;nextIt != end(); ++nextIt) {
+					Collision collision;
+					auto a = it.GetID() < nextIt.GetID() ? it : nextIt;
+					auto b = it.GetID() < nextIt.GetID() ? nextIt : it;
+					{
+						Circle ca, cb;
+						if (a->HasShape<Circle>(ca) && b->HasShape<Circle>(cb)) collision = Collider::Collide(ca,cb);
+					}
 
-				if (const Circle* cirlce = std::get_if<Circle>(&particle.m_Shape)) {
-					halfSize = Vec2{cirlce->Radius};
-					particleAABB = AABB::FromCenterHalfSize(position, halfSize);
-				}
-
-				if (particleAABB.Min.x <= boundsAABB->Min.x) {
-					position.x = boundsAABB->Min.x + halfSize.x;
-					velocity.x *= -1;
-					changed = true;
-				} else if (particleAABB.Max.x >= boundsAABB->Max.x) {
-					position.x = boundsAABB->Max.x - halfSize.x;
-					velocity.x *= -1;
-					changed = true;
-				}
-
-				if (particleAABB.Min.y <= boundsAABB->Min.y) {
-					position.y = boundsAABB->Min.y + halfSize.y;
-					velocity.y *= -1;
-					changed = true;
-				} else if (particleAABB.Max.y >= boundsAABB->Max.y) {
-					position.y = boundsAABB->Max.y - halfSize.y;
-					velocity.y *= -1;
-					changed = true;
-				}
-
-				if (changed) {
-					particle.SetPosition(position);
-					particle.SetVelocity(velocity);
+					if (collision) {
+						m_Collisions[{a.GetID(), b.GetID()}] = collision;
+					}
 				}
 			}
+
+			for (const auto& [pair, collision] : m_Collisions)
+			{
+				Particle* particleA = GetParticle(pair.first);
+				Particle* particleB = GetParticle(pair.second);
+				if (!particleA || !particleB) continue;
+
+				float weightA = 0.5;
+				float weightB = 0.5;
+
+				Vec2 posA = particleA->GetPosition();
+				Vec2 movA = collision.CollisionNormal * (collision.Interpenetration * weightA + REAL_EPSILON);
+				posA += movA;
+
+				Vec2 posB = particleB->GetPosition();
+				Vec2 movB = collision.CollisionNormal * (collision.Interpenetration * weightB + REAL_EPSILON);
+				posB -= movB;
+
+
+				Vec2 velA = particleA->GetVelocity();
+				Vec2 velB = particleB->GetVelocity();
+
+				Vec2 normalVelocityA = collision.CollisionNormal * Math::Dot(collision.CollisionNormal, velA);
+				Vec2 normalVelocityB = collision.CollisionNormal * Math::Dot(collision.CollisionNormal, velB);
+
+				// Vec2 collisionVelocity = normalVelocityA - normalVelocityB;
+
+				Real reboundA = 0.85;
+				Real reboundB = 0.85;
+
+				velA -= normalVelocityA * (1 + reboundA);
+				velB -= normalVelocityB * (1 + reboundB);
+
+				particleA->SetPosition(posA);
+				particleA->SetVelocity(velA);
+
+				particleB->SetPosition(posB);
+				particleB->SetVelocity(velB);
+			}
+
+			if (const AABB* boundsAABB = std::get_if<AABB>(&Bounds))
+			{
+				for (auto& particle : *this)
+				{
+					bool changed = false;
+					Vec2 position = particle.GetPosition();
+					Vec2 velocity = particle.GetVelocity();
+					Real rebound = 0.9;
+
+					Vec2 halfSize{0};
+					AABB particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+
+					if (const Circle* cirlce = std::get_if<Circle>(&particle.m_Shape)) {
+						halfSize = Vec2{cirlce->Radius};
+						particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+					}
+
+					if (particleAABB.Min.x <= boundsAABB->Min.x) {
+						position.x = boundsAABB->Min.x + halfSize.x;
+						if(velocity.x < 0) velocity.x *= -rebound;
+						changed = true;
+					} else if (particleAABB.Max.x >= boundsAABB->Max.x) {
+						position.x = boundsAABB->Max.x - halfSize.x;
+						if(velocity.x > 0) velocity.x *= -rebound;
+						changed = true;
+					}
+
+					if (particleAABB.Min.y <= boundsAABB->Min.y) {
+						position.y = boundsAABB->Min.y + halfSize.y;
+						if(velocity.y < 0) velocity.y *= -rebound;
+						changed = true;
+					} else if (particleAABB.Max.y >= boundsAABB->Max.y) {
+						position.y = boundsAABB->Max.y - halfSize.y;
+						if(velocity.y > 0) velocity.y *= -rebound;
+						changed = true;
+					}
+
+					if (changed) {
+						particle.SetPosition(position);
+						particle.SetVelocity(velocity);
+					}
+				}
+			}
+
+			if (m_Collisions.size() == 0) break;
 		}
 	}
 } // FYC

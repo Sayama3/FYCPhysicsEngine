@@ -7,12 +7,23 @@
 #include "Physics/Math.hpp"
 #include "Physics/AABB.hpp"
 #include "Physics/Particle.hpp"
+#include "Physics/Collision.hpp"
 
 namespace FYC {
+
+	struct PairHasher {
+	public:
+		template <typename T, typename U>
+		std::size_t operator()(const std::pair<T, U> &x) const
+		{
+			return std::hash<T>()(x.first) ^ std::hash<U>()(x.second);
+		}
+	};
 
 	class World {
 	public:
 		using ID = uint64_t;
+		using PairID = std::pair<ID, ID>;
 		inline static constexpr ID NULL_ID = ~0ull;
 		class WorldIterator {
 		public:
@@ -50,6 +61,8 @@ namespace FYC {
 		World();
 		explicit World(uint64_t reserveParticleCount);
 		~World();
+		World(const World&) = default;
+		World& operator=(const World&) = default;
 	public:
 		WorldIterator AddParticle();
 		WorldIterator AddParticle(const Particle::Shape& shape);
@@ -69,6 +82,7 @@ namespace FYC {
 		[[nodiscard]] WorldIterator end() {return WorldIterator{*this, NULL_ID};}
 	private:
 		std::unordered_map<ID, Particle> m_Particles;
+		std::unordered_map<PairID, Collision, PairHasher> m_Collisions;
 		ID m_IDGenerator{0ull};
 	public:
 		std::variant<std::monostate, AABB> Bounds;

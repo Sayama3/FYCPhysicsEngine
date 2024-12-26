@@ -11,6 +11,8 @@ set(PHYSICS_SRC
 		include/Physics/AABB.hpp
 		src/Circle.cpp
 		include/Physics/Circle.hpp
+		src/Collision.cpp
+		include/Physics/Collision.hpp
 )
 
 add_library(Physics STATIC ${PHYSICS_SRC})
@@ -45,11 +47,16 @@ target_precompile_headers(Physics PUBLIC
 		<optional>
 		<variant>
 		<tuple>
+		<map>
+		<set>
+		<unordered_map>
+		<unordered_set>
 
 		# C-Types Helpers
 		<cstdint>
 		<cstring>
 		<cmath>
+		<cfloat>
 		<cstddef>
 )
 
