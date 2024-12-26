@@ -10,6 +10,11 @@ namespace FYC
 {
 	namespace Math
 	{
+		Real Sign(const Real value)
+		{
+			return value < 0_r ? -1_r : +1_r;
+		}
+
 		Real Dot(const Vec2 &a, const Vec2 &b)
 		{
 			return a.x * b.x + a.y * b.y;
