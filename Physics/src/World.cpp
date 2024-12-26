@@ -245,7 +245,7 @@ namespace FYC {
 
 		// Collision Detection
 		FindParticlesCollisions();
-		for (int iterations = 0; iterations < 50; ++iterations)
+		for (int iterations = 0; iterations < 10; ++iterations)
 		{
 			ResolveParticleCollisions();
 			FindAndResolveBoundsCollisions();
