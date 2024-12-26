@@ -67,21 +67,21 @@ namespace FYC {
 		return {*this, id};
 	}
 
-	World::WorldIterator World::AddParticle(const Vec2 &position) {
+	World::WorldIterator World::AddParticle(const Particle::Shape& shape) {
 		auto id = m_IDGenerator++;
-		m_Particles.insert({id, Particle{position}});
+		m_Particles.insert({id, Particle{shape}});
 		return {*this, id};
 	}
 
-	World::WorldIterator World::AddParticle(const Vec2 &position, const Vec2 &velocity) {
+	World::WorldIterator World::AddParticle(const Particle::Shape& shape, const Vec2 &velocity) {
 		auto id = m_IDGenerator++;
-		m_Particles.insert({id, Particle{position, velocity}});
+		m_Particles.insert({id, Particle{shape, velocity}});
 		return {*this, id};
 	}
 
-	World::WorldIterator World::AddParticle(const Vec2 &position, const Vec2 &velocity, const Vec2 &constantAcceleration) {
+	World::WorldIterator World::AddParticle(const Particle::Shape& shape, const Vec2 &velocity, const Vec2 &constantAcceleration) {
 		auto id = m_IDGenerator++;
-		m_Particles.insert({id, Particle{position, velocity, constantAcceleration}});
+		m_Particles.insert({id, Particle{shape, velocity, constantAcceleration}});
 		return {*this, id};
 	}
 
@@ -127,7 +127,7 @@ namespace FYC {
 		}
 
 		// Collision Detection
-		if (const AABB* aabb = std::get_if<AABB>(&Bounds))
+		if (const AABB* boundsAABB = std::get_if<AABB>(&Bounds))
 		{
 			for (auto& particle : *this)
 			{
@@ -135,22 +135,30 @@ namespace FYC {
 				Vec2 position = particle.GetPosition();
 				Vec2 velocity = particle.GetVelocity();
 
-				if (position.x < aabb->Min.x) {
-					position.x = aabb->Min.x;
+				Vec2 halfSize{0};
+				AABB particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+
+				if (const Circle* cirlce = std::get_if<Circle>(&particle.m_Shape)) {
+					halfSize = Vec2{cirlce->Radius};
+					particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+				}
+
+				if (particleAABB.Min.x <= boundsAABB->Min.x) {
+					position.x = boundsAABB->Min.x + halfSize.x;
 					velocity.x *= -1;
 					changed = true;
-				} else if (position.x > aabb->Max.x) {
-					position.x = aabb->Max.x;
+				} else if (particleAABB.Max.x >= boundsAABB->Max.x) {
+					position.x = boundsAABB->Max.x - halfSize.x;
 					velocity.x *= -1;
 					changed = true;
 				}
 
-				if (position.y < aabb->Min.y) {
-					position.y = aabb->Min.y;
+				if (particleAABB.Min.y <= boundsAABB->Min.y) {
+					position.y = boundsAABB->Min.y + halfSize.y;
 					velocity.y *= -1;
 					changed = true;
-				} else if (position.y > aabb->Max.y) {
-					position.y = aabb->Max.y;
+				} else if (particleAABB.Max.y >= boundsAABB->Max.y) {
+					position.y = boundsAABB->Max.y - halfSize.y;
 					velocity.y *= -1;
 					changed = true;
 				}

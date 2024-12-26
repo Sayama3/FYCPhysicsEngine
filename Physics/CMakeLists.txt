@@ -9,6 +9,8 @@ set(PHYSICS_SRC
 		include/Physics/World.hpp
 		src/AABB.cpp
 		include/Physics/AABB.hpp
+		src/Circle.cpp
+		include/Physics/Circle.hpp
 )
 
 add_library(Physics STATIC ${PHYSICS_SRC})

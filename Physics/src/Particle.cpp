@@ -4,27 +4,53 @@
 
 #include "Physics/Particle.hpp"
 
+#include "Physics/AABB.hpp"
+
 namespace FYC {
-	Particle::~Particle() { }
+	struct AABB;
 
-	Particle::Particle() { }
+	Particle::~Particle() = default;
 
-	Particle::Particle(const Vec2 &position) : m_Position(position) { }
-
-	Particle::Particle(const Vec2 &position, const Vec2 &velocity) : m_Position(position), m_Velocity(velocity) { }
-
-	Particle::Particle(const Vec2 &position, const Vec2 &velocity, const Vec2 &constantAcceleration) : m_Position(position), m_Velocity(velocity), m_ConstantAccelerations(constantAcceleration) { }
-
-	Particle::Particle(Particle &&other) noexcept
-	:	Data(std::move(other.Data)),
-		m_Position(std::move(other.m_Position)),
-		m_Velocity(std::move(other.m_Velocity)),
-		m_ConstantAccelerations(std::move(other.m_ConstantAccelerations)),
-		m_SummedAccelerations(std::move(other.m_SummedAccelerations))
+	Particle::Particle() : m_Shape(Circle{{0,0}, 1})
 	{
 	}
 
-	Particle& Particle::operator=(Particle&& other) noexcept {
+	Particle::Particle(const Particle::Shape& shape) : m_Shape(shape)
+	{
+	}
+
+	Particle::Particle(const Particle::Shape& shape, const Vec2 &velocity) : m_Shape(shape), m_Velocity(velocity)
+	{
+	}
+
+	Particle::Particle(const Particle::Shape& shape, const Vec2 &velocity, const Vec2 &constantAcceleration) : m_Shape(shape), m_Velocity(velocity), m_ConstantAccelerations(constantAcceleration)
+	{
+	}
+
+	Particle Particle::CreateCircle(const Vec2& position, const Real radius)
+	{
+		return Particle{Circle{position, radius}};
+	}
+
+	Particle Particle::CreateCircle(const Vec2& position, const Real radius, const Vec2 &velocity)
+	{
+		return Particle{Circle{position, radius}, velocity};
+	}
+
+	Particle Particle::CreateCircle(const Vec2& position, const Real radius, const Vec2 &velocity, const Vec2 &constantAcceleration)
+	{
+		return Particle{Circle{position, radius}, velocity, constantAcceleration};
+	}
+
+	Particle::Particle(Particle&& other) noexcept
+		: Data(std::move(other.Data)),
+		  m_Shape(std::move(other.m_Shape)),
+		  m_Velocity(std::move(other.m_Velocity)),
+		  m_ConstantAccelerations(std::move(other.m_ConstantAccelerations)),
+		  m_SummedAccelerations(std::move(other.m_SummedAccelerations)) {
+	}
+
+	Particle &Particle::operator=(Particle &&other) noexcept {
 		swap(other);
 		return *this;
 	}
@@ -53,18 +79,54 @@ namespace FYC {
 		m_SummedAccelerations = acceleration;
 	}
 
-	void Particle::SetPosition(const Vec2 &position) {m_Position = position;}
-	Vec2 Particle::GetPosition() const {return m_Position;}
+	void Particle::SetPosition(const Vec2 &position) {
+		static_assert(std::is_same<Shape, std::variant<Circle>>());
+		if (Circle *circle = std::get_if<Circle>(&m_Shape)) {
+			circle->Position = position;
+		}
+	}
 
-	void Particle::SetVelocity(const Vec2 &velocity) {m_Velocity = velocity;}
-	Vec2 Particle::GetVelocity() const {return m_Velocity;}
+	Vec2 Particle::GetPosition() const {
+		static_assert(std::is_same<Shape, std::variant<Circle>>());
+		if (const Circle *circle = std::get_if<Circle>(&m_Shape)) {
+			return circle->Position;
+		}
+		return {NAN, NAN};
+	}
 
-	void Particle::swap(Particle& other) noexcept
-	{
+	void Particle::SetVelocity(const Vec2 &velocity) { m_Velocity = velocity; }
+	Vec2 Particle::GetVelocity() const { return m_Velocity; }
+
+	void Particle::swap(Particle &other) noexcept {
 		std::swap(Data, other.Data);
-		std::swap(m_Position, other.m_Position);
+		std::swap(m_Shape, other.m_Shape);
 		std::swap(m_Velocity, other.m_Velocity);
 		std::swap(m_ConstantAccelerations, other.m_ConstantAccelerations);
 		std::swap(m_SummedAccelerations, other.m_SummedAccelerations);
+	}
+
+	std::optional<Real> Particle::GetCircleRadius() const {
+		if (const Circle *circle = std::get_if<Circle>(&m_Shape)) {
+			return circle->Radius;
+		}
+		return std::nullopt;
+	}
+
+	void Particle::SetCircleRadius(const Real radius) {
+		if (Circle *circle = std::get_if<Circle>(&m_Shape)) {
+			circle->Radius = radius;
+		} else {
+			Vec2 particlePosition = GetPosition();
+			m_Shape = Circle{particlePosition, radius};
+		}
+	}
+
+	bool Particle::TrySetCircleRadius(Real radius)
+	{
+		if (Circle *circle = std::get_if<Circle>(&m_Shape)) {
+			circle->Radius = radius;
+			return true;
+		}
+		return false;
 	}
 } // FYC

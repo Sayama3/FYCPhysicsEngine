@@ -112,12 +112,17 @@ void Application::UpdateRendering() {
 	for (const auto& particle : GetWorld()) {
 		if (particle.Data.type() != typeid(Color)) continue;
 		auto pos = particle.GetPosition();
-		DrawCircleV({pos.x, pos.y}, 0.25f, std::any_cast<Color>(particle.Data));
+
+		FYC::Circle circle;
+		if (particle.HasShape<FYC::Circle>(circle)) {
+			DrawCircleV({pos.x, pos.y}, circle.Radius, std::any_cast<Color>(particle.Data));
+		}
 	}
 
 	if (const FYC::AABB* aabb = std::get_if<FYC::AABB>(&GetWorld().Bounds)) {
 		const auto size = aabb->GetSize();
-		DrawRectangleLinesEx(Rectangle{aabb->Min.x, aabb->Min.y, size.x, size.y}, 0.05, {0,180, 0, 160});
+		constexpr float linethick = 0.05;
+		DrawRectangleLinesEx(Rectangle{aabb->Min.x - linethick, aabb->Min.y - linethick, size.x + (linethick * 2), size.y + (linethick * 2)}, linethick, {0,180, 0, 160});
 	}
 }
 
@@ -207,6 +212,13 @@ void Application::UpdateUI() {
 			if (ImGuiLib::DragReal2("Velocity", velocity.data, 0.1)) particle.SetVelocity(velocity);
 			FYC::Vec2 acc = particle.GetConstantAccelerations();
 			if (ImGuiLib::DragReal2("Acceleration", acc.data, 0.1)) particle.SetConstantAcceleration(acc);
+
+			if (auto maybeRadius = particle.GetCircleRadius()) {
+				FYC::Real radius = maybeRadius.value();
+				if (ImGuiLib::DragReal("Radius", &radius, 0.01, 0.01, REAL_MAX, "%.2f")) {
+					particle.SetCircleRadius(radius);
+				}
+			}
 
 			if (particle.Data.type() == typeid(Color)) {
 				Color color = std::any_cast<Color>(particle.Data);

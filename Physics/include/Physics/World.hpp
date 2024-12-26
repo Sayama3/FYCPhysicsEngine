@@ -52,9 +52,9 @@ namespace FYC {
 		~World();
 	public:
 		WorldIterator AddParticle();
-		WorldIterator AddParticle(const Vec2& position);
-		WorldIterator AddParticle(const Vec2& position, const Vec2& velocity);
-		WorldIterator AddParticle(const Vec2& position, const Vec2& velocity, const Vec2& constantAcceleration);
+		WorldIterator AddParticle(const Particle::Shape& shape);
+		WorldIterator AddParticle(const Particle::Shape& shape, const Vec2& velocity);
+		WorldIterator AddParticle(const Particle::Shape& shape, const Vec2& velocity, const Vec2& constantAcceleration);
 		WorldIterator AddParticle(const Particle& particle);
 		WorldIterator AddParticle(Particle&& particle);
 
