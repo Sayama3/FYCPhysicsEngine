@@ -8,7 +8,7 @@ using namespace FYC::Literal;
 
 namespace FYC {
 
-	static constexpr Real NumberOfFrameToRemove{2.2};
+	static constexpr Real NumberOfFrameToRemove{2.5};
 
 	// ========== WorldIterator ==========
 	World::WorldIterator::WorldIterator(World &world, const uint64_t particleId) : m_World(&world), m_ParticleId(particleId) { }
@@ -304,6 +304,11 @@ namespace FYC {
 			FindAndResolveBoundsCollisions(stepTime);
 			FindParticlesCollisions();
 			if (m_Collisions.size() == 0) break;
+		}
+
+		for (auto& particle : *this) {
+			if (!particle.IsKinematic()) continue;
+			particle.SetVelocity(particle.GetVelocity() * particle.GetDrag());
 		}
 	}
 } // FYC

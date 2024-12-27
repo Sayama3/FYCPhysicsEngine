@@ -128,6 +128,9 @@ namespace FYC {
 	void Particle::SetRebound(const Real rebound) { m_Rebound = rebound; }
 	Real Particle::GetRebound() const { return m_Rebound; }
 
+	void Particle::SetDrag(const Real drag) { m_Drag = drag; }
+	Real Particle::GetDrag() const { return m_Drag; }
+
 	Real Particle::GetInverseMass() const {
 		return m_IsKinematic ? 1 : 0;
 	}

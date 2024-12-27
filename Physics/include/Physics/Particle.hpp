@@ -58,6 +58,9 @@ namespace FYC {
 		void SetRebound(Real rebound);
 		[[nodiscard]] Real GetRebound() const;
 
+		void SetDrag(Real drag);
+		[[nodiscard]] Real GetDrag() const;
+
 		[[nodiscard]] Real GetInverseMass() const;
 	public:
 		void swap(Particle& other) noexcept;
@@ -109,6 +112,7 @@ namespace FYC {
 		Vec2 m_ConstantAccelerations;
 		Vec2 m_SummedAccelerations;
 		Real m_Rebound = 0.8;
+		Real m_Drag = 0.999;
 		bool m_IsKinematic = true;
 	};
 } // FYC
