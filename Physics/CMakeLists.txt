@@ -37,6 +37,7 @@ target_precompile_headers(Physics PUBLIC
 		<filesystem>
 		<string>
 		<string_view>
+		<fstream>
 
 		# Containers
 		<array>
