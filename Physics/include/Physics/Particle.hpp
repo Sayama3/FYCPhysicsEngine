@@ -38,12 +38,13 @@ namespace FYC {
 		void AddConstantAcceleration(const Vec2& constantAcceleration);
 		void SubConstantAcceleration(const Vec2& constantAcceleration);
 		void SetConstantAcceleration(const Vec2& constantAcceleration);
-		[[nodiscard]] Vec2 GetConstantAccelerations() const {return m_ConstantAccelerations;}
+		[[nodiscard]] Vec2 GetConstantAccelerations() const;
 
 		void AddAcceleration(const Vec2& acceleration);
 		void SubAcceleration(const Vec2& acceleration);
 		void SetAcceleration(const Vec2& acceleration);
-		[[nodiscard]] Vec2 GetAcceleration() const {return m_ConstantAccelerations;}
+		[[nodiscard]] Vec2 GetAcceleration() const;
+
 	public:
 		void SetPosition(const Vec2& position);
 		[[nodiscard]] Vec2 GetPosition() const;
@@ -107,7 +108,7 @@ namespace FYC {
 		Vec2 m_Velocity;
 		Vec2 m_ConstantAccelerations;
 		Vec2 m_SummedAccelerations;
-		Real m_Rebound = 0.9;
+		Real m_Rebound = 0.8;
 		bool m_IsKinematic = true;
 	};
 } // FYC

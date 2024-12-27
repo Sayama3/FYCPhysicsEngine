@@ -82,6 +82,8 @@ namespace FYC {
 		m_ConstantAccelerations = constantAcceleration;
 	}
 
+	Vec2 Particle::GetConstantAccelerations() const {return m_IsKinematic ? m_ConstantAccelerations : Vec2{};}
+
 	void Particle::AddAcceleration(const Vec2 &acceleration) {
 		m_SummedAccelerations += acceleration;
 	}
@@ -93,6 +95,8 @@ namespace FYC {
 	void Particle::SetAcceleration(const Vec2 &acceleration) {
 		m_SummedAccelerations = acceleration;
 	}
+
+	Vec2 Particle::GetAcceleration() const {return m_IsKinematic ? m_ConstantAccelerations : Vec2{};}
 
 	void Particle::SetPosition(const Vec2 &position) {
 		static_assert(std::is_same<Shape, std::variant<Circle, AABB>>());
@@ -116,7 +120,7 @@ namespace FYC {
 	}
 
 	void Particle::SetVelocity(const Vec2 &velocity) { m_Velocity = velocity; }
-	Vec2 Particle::GetVelocity() const { return m_Velocity; }
+	Vec2 Particle::GetVelocity() const { return m_IsKinematic ? m_Velocity : Vec2{}; }
 
 	void Particle::SetKinematic(const bool isKinematic) { m_IsKinematic = isKinematic; }
 	bool Particle::IsKinematic() const { return m_IsKinematic; }
