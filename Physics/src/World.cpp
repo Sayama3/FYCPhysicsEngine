@@ -8,7 +8,7 @@ using namespace FYC::Literal;
 
 namespace FYC {
 
-	static constexpr Real NumberOfFrameToRemove{2};
+	static constexpr Real NumberOfFrameToRemove{2.2};
 
 	// ========== WorldIterator ==========
 	World::WorldIterator::WorldIterator(World &world, const uint64_t particleId) : m_World(&world), m_ParticleId(particleId) { }
@@ -237,24 +237,24 @@ namespace FYC {
 					particleAABB = *aabb;
 				}
 
-				if (particleAABB.Min.x <= boundsAABB->Min.x) {
+				if (particleAABB.Min.x < boundsAABB->Min.x) {
 					position.x = boundsAABB->Min.x + halfSize.x;
 					if(velocity.x < 0) impulse += {-(velocity.x), 0};
 					contactNormal += {1,0};
 					changed = true;
-				} else if (particleAABB.Max.x >= boundsAABB->Max.x) {
+				} else if (particleAABB.Max.x > boundsAABB->Max.x) {
 					position.x = boundsAABB->Max.x - halfSize.x;
 					if(velocity.x > 0) impulse += {-(velocity.x), 0};;
 					contactNormal += {-1,0};
 					changed = true;
 				}
 
-				if (particleAABB.Min.y <= boundsAABB->Min.y) {
+				if (particleAABB.Min.y < boundsAABB->Min.y) {
 					position.y = boundsAABB->Min.y + halfSize.y;
 					if(velocity.y < 0) impulse += {0, -(velocity.y)};;
 					contactNormal += {0, 1};
 					changed = true;
-				} else if (particleAABB.Max.y >= boundsAABB->Max.y) {
+				} else if (particleAABB.Max.y > boundsAABB->Max.y) {
 					position.y = boundsAABB->Max.y - halfSize.y;
 					if(velocity.y > 0) impulse += {0, -(velocity.y)};;
 					contactNormal += {0, -1};
