@@ -4,6 +4,8 @@
 
 #include "Physics/Collision.hpp"
 
+using namespace FYC::Literal;
+
 namespace FYC {
 	Collision CollisionDetector::Collide(const Circle &a, const Circle &b)
 	{
@@ -45,7 +47,26 @@ namespace FYC {
 	}
 
 	Collision CollisionDetector::Collide(const Circle &a, const AABB &b) {
-		return {{0,0}, {0,0}, 0, false};
+		const Vec2 closestPointToAABB = Vec2{Math::Clamp(a.Position.x, b.Min.x, b.Max.x), Math::Clamp(a.Position.y, b.Min.y, b.Max.y)};
+		const Vec2 aToClosest = closestPointToAABB - a.Position;
+		const Real lenAToClosest = Math::Magnitude(aToClosest);
+
+		if (lenAToClosest > a.Radius) return {{0,0}, {0,0}, 0, false};
+
+		if (lenAToClosest > REAL_EPSILON) { // Center is outside the AABB
+			const Vec2 normal = -aToClosest / lenAToClosest;
+			const Real inter = a.Radius - lenAToClosest;
+			const Vec2 pointCollision = a.Position - normal * (inter * 0.5_r);
+			return {pointCollision, normal, inter, true};
+		} else { // Center is inside the AABB
+			const Vec2 aToB = b.GetCenter() - a.Position;
+			const Vec2 absAToB = {std::abs(aToB.x), std::abs(aToB.y)};
+			const Vec2 hf = b.GetHalfSize();
+			const Vec2 distanceToOut = hf - absAToB;
+			const Vec2 normal = distanceToOut.x < distanceToOut.y ? Vec2{-Math::Sign(aToB.x),0} : Vec2{0, -Math::Sign(aToB.y)};
+			const Real inter = std::min(distanceToOut.x, distanceToOut.y) + a.Radius;
+			return {a.Position - normal * (inter * 0.5_r), normal, inter, true};
+		}
 	}
 
 	Collision CollisionDetector::Collide(const AABB &a, const Circle &b) {
