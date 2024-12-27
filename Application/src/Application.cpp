@@ -106,7 +106,8 @@ void Application::UpdateLogic() {
 	}
 
 	if (m_PhysicsMode == PhysicsMode::Play) {
-		m_WorldPlay.Step(GetFrameTime());
+		float stepTime = std::min(GetFrameTime(), 1.0f);
+		m_WorldPlay.Step(stepTime);
 	}
 }
 

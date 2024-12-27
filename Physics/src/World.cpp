@@ -4,7 +4,12 @@
 
 #include "Physics/World.hpp"
 
+using namespace FYC::Literal;
+
 namespace FYC {
+
+	static constexpr Real NumberOfFrameToRemove{2};
+
 	// ========== WorldIterator ==========
 	World::WorldIterator::WorldIterator(World &world, const uint64_t particleId) : m_World(&world), m_ParticleId(particleId) { }
 	World::WorldIterator::WorldIterator(World *world, const uint64_t particleId) : m_World(world), m_ParticleId(particleId) { }
@@ -145,7 +150,7 @@ namespace FYC {
 		}
 	}
 
-	void World::ResolveParticleCollisions() {
+	void World::ResolveParticleCollisions(Real stepTime) {
 		for (const auto& [pair, collision] : m_Collisions)
 		{
 			Particle* particleA = GetParticle(pair.first);
@@ -164,18 +169,25 @@ namespace FYC {
 
 			const Vec2 velA = particleA->GetVelocity();
 			const Vec2 velB = particleB->GetVelocity();
-
 			const Real contactVelocity = Math::Dot(collision.CollisionNormal, velA - velB);
+
+			const Vec2 accA = particleA->GetConstantAccelerations();
+			const Vec2 accB = particleB->GetConstantAccelerations();
+			Real accCausedSepVelocity = (Math::Dot(collision.CollisionNormal, accA - accB)) * stepTime * NumberOfFrameToRemove;
+			if (accCausedSepVelocity > 0) {
+				accCausedSepVelocity = 0;
+			}
 
 			// Resolving velocity
 			if (contactVelocity <= 0) {
-				const Real separatingVelocityA = -contactVelocity * reboundA;
-				const Real deltaVelocityA = separatingVelocityA - contactVelocity;
+				Real separatingVelocity = -contactVelocity + accCausedSepVelocity;
+				if(separatingVelocity < 0) separatingVelocity = 0;
+
+				const Real deltaVelocityA = separatingVelocity * reboundA - contactVelocity;
 				const Real separatingImpulseA = deltaVelocityA / totalInverseMass;
 				const Vec2 directedSeparatedImpulseA = collision.CollisionNormal * separatingImpulseA;
 
-				const Real separatingVelocityB = -contactVelocity * reboundB;
-				const Real deltaVelocityB = separatingVelocityB - contactVelocity;
+				const Real deltaVelocityB = separatingVelocity * reboundB - contactVelocity;
 				const Real separatingImpulseB = deltaVelocityB / totalInverseMass;
 				const Vec2 directedSeparatedImpulseB = collision.CollisionNormal * separatingImpulseB;
 
@@ -196,7 +208,7 @@ namespace FYC {
 		}
 	}
 
-	void World::FindAndResolveBoundsCollisions() {
+	void World::FindAndResolveBoundsCollisions(Real stepTime) {
 		static_assert(std::is_same<Particle::Shape, std::variant<Circle, AABB>>());
 
 		if (const AABB* boundsAABB = std::get_if<AABB>(&Bounds))
@@ -207,11 +219,15 @@ namespace FYC {
 
 				bool changed = false;
 				Vec2 position = particle.GetPosition();
-				Vec2 velocity = particle.GetVelocity();
+				const Vec2 velocity = particle.GetVelocity();
 				const Real rebound = particle.GetRebound();
+
+				Vec2 impulse{};
 
 				Vec2 halfSize{0};
 				AABB particleAABB = AABB::FromCenterHalfSize(position, halfSize);
+
+				Vec2 contactNormal{};
 
 				if (const Circle* circle = std::get_if<Circle>(&particle.m_Shape)) {
 					halfSize = Vec2{circle->Radius};
@@ -223,27 +239,43 @@ namespace FYC {
 
 				if (particleAABB.Min.x <= boundsAABB->Min.x) {
 					position.x = boundsAABB->Min.x + halfSize.x;
-					if(velocity.x < 0) velocity.x *= -rebound;
+					if(velocity.x < 0) impulse += {-(velocity.x), 0};
+					contactNormal += {1,0};
 					changed = true;
 				} else if (particleAABB.Max.x >= boundsAABB->Max.x) {
 					position.x = boundsAABB->Max.x - halfSize.x;
-					if(velocity.x > 0) velocity.x *= -rebound;
+					if(velocity.x > 0) impulse += {-(velocity.x), 0};;
+					contactNormal += {-1,0};
 					changed = true;
 				}
 
 				if (particleAABB.Min.y <= boundsAABB->Min.y) {
 					position.y = boundsAABB->Min.y + halfSize.y;
-					if(velocity.y < 0) velocity.y *= -rebound;
+					if(velocity.y < 0) impulse += {0, -(velocity.y)};;
+					contactNormal += {0, 1};
 					changed = true;
 				} else if (particleAABB.Max.y >= boundsAABB->Max.y) {
 					position.y = boundsAABB->Max.y - halfSize.y;
-					if(velocity.y > 0) velocity.y *= -rebound;
+					if(velocity.y > 0) impulse += {0, -(velocity.y)};;
+					contactNormal += {0, -1};
 					changed = true;
 				}
 
 				if (changed) {
 					particle.SetPosition(position);
-					particle.SetVelocity(velocity);
+
+					if (impulse.x != 0 || impulse.y != 0)
+					{
+						Math::NormalizeInPlace(contactNormal);
+						const Vec2 contactVelocity = contactNormal * Math::Dot(contactNormal, velocity);
+						const Real accCausedSepVelocity = (Math::Dot(contactNormal, particle.GetConstantAccelerations())) * stepTime * NumberOfFrameToRemove;
+						Real impulseValue = Math::Dot(contactNormal, impulse);
+						if (accCausedSepVelocity < 0) {
+							impulseValue += accCausedSepVelocity;
+							if (impulseValue < 0) impulseValue = 0;
+						}
+						particle.SetVelocity(velocity - contactVelocity + contactNormal * (impulseValue * rebound));
+					}
 				}
 			}
 		}
@@ -268,8 +300,8 @@ namespace FYC {
 		FindParticlesCollisions();
 		for (int iterations = 0; iterations < 10; ++iterations)
 		{
-			ResolveParticleCollisions();
-			FindAndResolveBoundsCollisions();
+			ResolveParticleCollisions(stepTime);
+			FindAndResolveBoundsCollisions(stepTime);
 			FindParticlesCollisions();
 			if (m_Collisions.size() == 0) break;
 		}

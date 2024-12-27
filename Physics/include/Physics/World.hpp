@@ -78,8 +78,8 @@ namespace FYC {
 		void RemoveParticle(ID id);
 	private:
 		void FindParticlesCollisions();
-		void ResolveParticleCollisions();
-		void FindAndResolveBoundsCollisions();
+		void ResolveParticleCollisions(Real stepTime);
+		void FindAndResolveBoundsCollisions(Real stepTime);
 
 		void Integrate(Real stepTime);
 
