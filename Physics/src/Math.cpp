@@ -15,6 +15,10 @@ namespace FYC
 			return value < 0_r ? -1_r : +1_r;
 		}
 
+		Real Clamp(const Real value, const Real min, const Real max) {
+			return std::max(min, std::min(max, value));
+		}
+
 		Real Dot(const Vec2 &a, const Vec2 &b)
 		{
 			return a.x * b.x + a.y * b.y;

@@ -162,6 +162,7 @@ namespace FYC {
 		inline static constexpr Real rad2deg {static_cast<Real>(180) / pi};
 
 		[[nodiscard]] Real Sign(Real value);
+		[[nodiscard]] Real Clamp(Real value, Real min, Real max);
 		[[nodiscard]] Real Dot(const Vec2& a, const Vec2& b);
 		[[nodiscard]] Real MagnitudeSqr(const Vec2& vec);
 		[[nodiscard]] Real Magnitude(const Vec2& vec);
