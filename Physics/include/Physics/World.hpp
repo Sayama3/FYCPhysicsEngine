@@ -58,6 +58,7 @@ namespace FYC {
 			World* m_World = nullptr;
 			ID m_ParticleId = NULL_ID;
 		};
+		using Callback = std::function<void(WorldIterator, WorldIterator, Collision)>;
 	public:
 		World();
 		explicit World(uint64_t reserveParticleCount);
@@ -76,16 +77,20 @@ namespace FYC {
 		[[nodiscard]] const Particle* GetParticle(ID id) const;
 
 		void RemoveParticle(ID id);
+	public:
+		void SetCallback(ID, Callback);
+		void RemoveCallback(ID);
+		void RemoveAllCallback();
 	private:
 		void FindParticlesCollisions();
 		void ResolveParticleCollisions(Real stepTime);
 		void FindAndResolveBoundsCollisions(Real stepTime);
 
 		void Integrate(Real stepTime);
-
 		void PutParticlesToSleep(Real stepTime);
-
 		void DragParticles();
+
+		void InvokeCollisionsCallbacks();
 
 	public:
 		void Step(Real stepTime);
@@ -95,6 +100,8 @@ namespace FYC {
 	private:
 		std::unordered_map<ID, Particle> m_Particles;
 		std::unordered_map<std::pair<ID, ID>, Collision, PairHasher> m_Collisions;
+		std::unordered_map<ID, Callback> m_CollisionCallbacks;
+		std::unordered_map<ID, std::unordered_map<ID, Collision>> m_TotalFrameCollisions;
 		ID m_IDGenerator{0ull};
 	public:
 		std::variant<std::monostate, AABB> Bounds;

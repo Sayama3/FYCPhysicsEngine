@@ -57,13 +57,17 @@ namespace FYC {
 
 	// ========== World ==========
 	World::World() {
-		m_Particles.reserve(1024);
-		m_Collisions.reserve(1024);
+		m_Particles.reserve(256);
+		m_Collisions.reserve(512);
+		m_CollisionCallbacks.reserve(256);
+		m_TotalFrameCollisions.reserve(256);
 	}
 
 	World::World(const uint64_t reserveParticleCount) {
 		m_Particles.reserve(reserveParticleCount);
 		m_Collisions.reserve(reserveParticleCount);
+		m_CollisionCallbacks.reserve(reserveParticleCount);
+		m_TotalFrameCollisions.reserve(reserveParticleCount);
 	}
 
 	World::~World() = default;
@@ -118,9 +122,20 @@ namespace FYC {
 		else return nullptr;
 	}
 
-	void World::RemoveParticle(const ID id)
-	{
+	void World::RemoveParticle(const ID id) {
 		m_Particles.erase(id);
+	}
+
+	void World::SetCallback(const ID id, Callback func) {
+		m_CollisionCallbacks[id] = std::move(func);
+	}
+
+	void World::RemoveCallback(const ID id) {
+		m_CollisionCallbacks.erase(id);
+	}
+
+	void World::RemoveAllCallback() {
+		m_CollisionCallbacks.clear();
 	}
 
 	void World::FindParticlesCollisions() {
@@ -195,6 +210,9 @@ namespace FYC {
 
 				particleA->SetVelocity(velA + directedSeparatedImpulseA * inverseMassA);
 				particleB->SetVelocity(velB - directedSeparatedImpulseB * inverseMassB);
+
+				m_TotalFrameCollisions[pair.first][pair.second] = collision;
+				m_TotalFrameCollisions[pair.second][pair.first] = collision;
 			}
 
 			// Resolving Interpenetration
@@ -206,6 +224,9 @@ namespace FYC {
 
 				particleA->SetPosition(posA + separatingMovement * inverseMassA);
 				particleB->SetPosition(posB - separatingMovement * inverseMassB);
+
+				m_TotalFrameCollisions[pair.first][pair.second] = collision;
+				m_TotalFrameCollisions[pair.second][pair.first] = collision;
 			}
 		}
 	}
@@ -215,12 +236,15 @@ namespace FYC {
 
 		if (const AABB* boundsAABB = std::get_if<AABB>(&Bounds))
 		{
-			for (auto& particle : *this)
+			// for (auto& particle : *this)
+			for (auto it = begin(); it != end(); ++it)
 			{
+				auto& particle = *it;
 				if (!particle.IsKinematic() || !particle.IsAwake()) continue;
 
 				bool changed = false;
-				Vec2 position = particle.GetPosition();
+				const Vec2 initialPosition = particle.GetPosition();
+				Vec2 position = initialPosition;
 				const Vec2 velocity = particle.GetVelocity();
 				const Real rebound = particle.GetRebound();
 
@@ -264,11 +288,13 @@ namespace FYC {
 				}
 
 				if (changed) {
+					Math::NormalizeInPlace(contactNormal);
+					Real inter = Math::Magnitude(position - initialPosition);
+					m_TotalFrameCollisions[it.GetID()][NULL_ID] = {initialPosition + contactNormal * (inter * 0.5), contactNormal, inter, true};
 					particle.SetPosition(position);
 
 					if (impulse.x != 0 || impulse.y != 0)
 					{
-						Math::NormalizeInPlace(contactNormal);
 						const Vec2 contactVelocity = contactNormal * Math::Dot(contactNormal, velocity);
 						const Real accCausedSepVelocity = (Math::Dot(contactNormal, particle.GetConstantAccelerations())) * stepTime * NumberOfFrameToRemove;
 						Real impulseValue = Math::Dot(contactNormal, impulse);
@@ -318,12 +344,22 @@ namespace FYC {
 		}
 	}
 
-	void World::Step(Real stepTime)
+	void World::InvokeCollisionsCallbacks() {
+		for (auto&[id, callback] : m_CollisionCallbacks) {
+			if (!m_TotalFrameCollisions.contains(id)) continue;
+			for (auto&[ otherId, collision] : m_TotalFrameCollisions.at(id)) {
+				callback(WorldIterator{this, id}, WorldIterator{this, otherId}, collision);
+			}
+		}
+	}
+
+	void World::Step(const Real stepTime)
 	{
 		// Integration
 		Integrate(stepTime);
 
 		// Collision Detection
+		m_TotalFrameCollisions.clear();
 		FindParticlesCollisions();
 		for (int iterations = 0; iterations < 10; ++iterations)
 		{
@@ -335,5 +371,7 @@ namespace FYC {
 
 		PutParticlesToSleep(stepTime);
 		DragParticles();
+
+		InvokeCollisionsCallbacks();
 	}
 } // FYC
