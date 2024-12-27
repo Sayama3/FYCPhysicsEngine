@@ -61,6 +61,11 @@ namespace FYC {
 		void SetDrag(Real drag);
 		[[nodiscard]] Real GetDrag() const;
 
+		[[nodiscard]] bool IsAwake() const;
+		void WakeUp();
+		void Sleep();
+		void SetIsAwake(bool isAwake);
+
 		[[nodiscard]] Real GetInverseMass() const;
 	public:
 		void swap(Particle& other) noexcept;
@@ -111,8 +116,11 @@ namespace FYC {
 		Vec2 m_Velocity;
 		Vec2 m_ConstantAccelerations;
 		Vec2 m_SummedAccelerations;
+		Vec2 m_PreviousPosition;
 		Real m_Rebound = 0.8;
 		Real m_Drag = 0.999;
+		Real m_AsleepDuration{0};
 		bool m_IsKinematic = true;
+		bool m_IsAwake = true;
 	};
 } // FYC

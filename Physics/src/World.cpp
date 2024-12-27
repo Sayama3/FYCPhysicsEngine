@@ -9,6 +9,8 @@ using namespace FYC::Literal;
 namespace FYC {
 
 	static constexpr Real NumberOfFrameToRemove{2.5};
+	static constexpr Real EpsilonToBeStill{0.001};
+	static constexpr Real TimeStill{1};
 
 	// ========== WorldIterator ==========
 	World::WorldIterator::WorldIterator(World &world, const uint64_t particleId) : m_World(&world), m_ParticleId(particleId) { }
@@ -132,7 +134,7 @@ namespace FYC {
 				auto a = it.GetID() < nextIt.GetID() ? it : nextIt;
 				auto b = it.GetID() < nextIt.GetID() ? nextIt : it;
 
-				if (!a->IsKinematic() && !b->IsKinematic()) continue;
+				if ((!a->IsKinematic() || !a->IsAwake()) && (!b->IsKinematic() || !b->IsAwake())) continue;
 
 				{
 					Circle ca, cb;
@@ -215,7 +217,7 @@ namespace FYC {
 		{
 			for (auto& particle : *this)
 			{
-				if (!particle.IsKinematic()) continue;
+				if (!particle.IsKinematic() || !particle.IsAwake()) continue;
 
 				bool changed = false;
 				Vec2 position = particle.GetPosition();
@@ -284,10 +286,35 @@ namespace FYC {
 	void World::Integrate(Real stepTime) {
 		for (auto& particle : *this)
 		{
-			if (!particle.IsKinematic()) continue;
+			if (!particle.IsKinematic() || !particle.IsAwake()) continue;
 			particle.SetPosition(particle.GetPosition() + particle.m_Velocity * stepTime);
 			particle.SetVelocity(particle.GetVelocity() + particle.m_ConstantAccelerations * stepTime + particle.m_SummedAccelerations * stepTime);
 			particle.m_SummedAccelerations = Vec2{};
+		}
+	}
+
+	void World::PutParticlesToSleep(const Real stepTime) {
+		for (auto& particle : *this) {
+			if (!particle.IsKinematic() || !particle.IsAwake()) continue;
+			const Vec2 pos = particle.GetPosition();
+			const Vec2 prevPos = particle.m_PreviousPosition;
+			const Real distPrev = Math::Magnitude(prevPos - pos);
+			if (distPrev < EpsilonToBeStill) {
+				if (particle.m_AsleepDuration > TimeStill)
+					particle.Sleep();
+				else
+					particle.m_AsleepDuration += stepTime;
+			} else {
+				particle.m_AsleepDuration = 0;
+				particle.m_PreviousPosition = pos;
+			}
+		}
+	}
+
+	void World::DragParticles() {
+		for (auto& particle : *this) {
+			if (!particle.IsKinematic() || !particle.IsAwake()) continue;
+			particle.SetVelocity(particle.GetVelocity() * particle.GetDrag());
 		}
 	}
 
@@ -306,9 +333,7 @@ namespace FYC {
 			if (m_Collisions.size() == 0) break;
 		}
 
-		for (auto& particle : *this) {
-			if (!particle.IsKinematic()) continue;
-			particle.SetVelocity(particle.GetVelocity() * particle.GetDrag());
-		}
+		PutParticlesToSleep(stepTime);
+		DragParticles();
 	}
 } // FYC

@@ -244,6 +244,8 @@ void Application::UpdateUI() {
 				if (ImGuiLib::SliderReal("Rebound", &rebound, 0, 1)) particle.SetRebound(rebound);
 				FYC::Real inv_drag = 1-particle.GetDrag();
 				if (ImGuiLib::SliderReal("Inverse Drag", &inv_drag, 1, 0, "%.5f", ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_Logarithmic)) particle.SetDrag(1-inv_drag);
+				bool awake = particle.IsAwake();
+				if (ImGui::Checkbox("Awake", &awake)) particle.SetIsAwake(awake);
 			}
 
 			static_assert(std::is_same<FYC::Particle::Shape, std::variant<FYC::Circle, FYC::AABB> >());

@@ -83,6 +83,10 @@ namespace FYC {
 
 		void Integrate(Real stepTime);
 
+		void PutParticlesToSleep(Real stepTime);
+
+		void DragParticles();
+
 	public:
 		void Step(Real stepTime);
 	public:
