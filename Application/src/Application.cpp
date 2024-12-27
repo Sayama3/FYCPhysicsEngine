@@ -199,7 +199,7 @@ void Application::UpdateUI() {
 		{
 			FYC::World::WorldIterator p;
 			if (ImGui::Button("Add Circle")) {
-				p = GetWorld().AddParticle(FYC::Particle::CreateCircle({}, 1));
+				p = GetWorld().AddParticle(FYC::Particle::CreateCircle({}, 0.5));
 			}
 
 			if (ImGui::Button("Add Rectangle")) {
@@ -224,32 +224,37 @@ void Application::UpdateUI() {
 		for (auto it = currentWorld.begin() ; it != currentWorld.end(); ++it) {
 			FYC::Particle& particle = *it;
 			ImGui::PushID(reinterpret_cast<void*>(it.GetID()));
+
+			if (!particle.HasShape<FYC::AABB>()) {
+				if (ImGui::Button("Change Shape to Rectangle")) particle.SetRectangleSize({1,1});
+			}
+			if (!particle.HasShape<FYC::Circle>()) {
+				if (ImGui::Button("Change Shape to Circle")) particle.SetCircleRadius(0.5);
+			}
+
+			bool isKinematic = particle.IsKinematic();
+			if (ImGui::Checkbox("Is Kinematic", &isKinematic)) particle.SetKinematic(isKinematic);
 			auto position = particle.GetPosition();
 			if (ImGuiLib::DragReal2("Position", position.data, 0.1)) particle.SetPosition(position);
-			auto velocity = particle.GetVelocity();
-			if (ImGuiLib::DragReal2("Velocity", velocity.data, 0.1)) particle.SetVelocity(velocity);
-			FYC::Vec2 acc = particle.GetConstantAccelerations();
-			if (ImGuiLib::DragReal2("Acceleration", acc.data, 0.1)) particle.SetConstantAcceleration(acc);
-
+			if (isKinematic) {
+				auto velocity = particle.GetVelocity();
+				if (ImGuiLib::DragReal2("Velocity", velocity.data, 0.1)) particle.SetVelocity(velocity);
+				FYC::Vec2 acc = particle.GetConstantAccelerations();
+				if (ImGuiLib::DragReal2("Acceleration", acc.data, 0.1)) particle.SetConstantAcceleration(acc);
+				FYC::Real rebound = particle.GetRebound();
+				if (ImGuiLib::SliderReal("Rebound", &rebound, 0, 1)) particle.SetRebound(rebound);
+			}
 
 			static_assert(std::is_same<FYC::Particle::Shape, std::variant<FYC::Circle, FYC::AABB> >());
 			if (auto maybeRadius = particle.GetCircleRadius()) {
-				if (ImGui::Button("Change to Rectangle")) {
-					particle.SetRectangleSize({1, 1});
-				} else {
-					FYC::Real radius = maybeRadius.value();
-					if (ImGuiLib::DragReal("Radius", &radius, 0.01, 0.01, REAL_MAX, "%.2f")) {
-						particle.TrySetCircleRadius(radius);
-					}
+				FYC::Real radius = maybeRadius.value();
+				if (ImGuiLib::DragReal("Radius", &radius, 0.01, 0.01, REAL_MAX, "%.2f")) {
+					particle.TrySetCircleRadius(radius);
 				}
 			} else if (auto maybeSize = particle.GetRectangleSize()) {
-				if (ImGui::Button("Change to Circle")) {
-						particle.SetCircleRadius(1);
-				} else {
-					FYC::Vec2 size = maybeSize.value();
-					if (ImGuiLib::DragReal2("Size", size.data, 0.01, 0.01, REAL_MAX, "%.2f")) {
-						particle.TrySetRectangleSize(size);
-					}
+				FYC::Vec2 size = maybeSize.value();
+				if (ImGuiLib::DragReal2("Size", size.data, 0.01, 0.01, REAL_MAX, "%.2f")) {
+					particle.TrySetRectangleSize(size);
 				}
 			}
 

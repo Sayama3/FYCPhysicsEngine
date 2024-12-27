@@ -50,6 +50,14 @@ namespace FYC {
 
 		void SetVelocity(const Vec2& velocity);
 		[[nodiscard]] Vec2 GetVelocity() const;
+
+		void SetKinematic(bool isKinematic);
+		[[nodiscard]] bool IsKinematic() const;
+
+		void SetRebound(Real rebound);
+		[[nodiscard]] Real GetRebound() const;
+
+		[[nodiscard]] Real GetInverseMass() const;
 	public:
 		void swap(Particle& other) noexcept;
 	public:
@@ -99,5 +107,7 @@ namespace FYC {
 		Vec2 m_Velocity;
 		Vec2 m_ConstantAccelerations;
 		Vec2 m_SummedAccelerations;
+		Real m_Rebound = 0.9;
+		bool m_IsKinematic = true;
 	};
 } // FYC

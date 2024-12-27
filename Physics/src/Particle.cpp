@@ -118,6 +118,16 @@ namespace FYC {
 	void Particle::SetVelocity(const Vec2 &velocity) { m_Velocity = velocity; }
 	Vec2 Particle::GetVelocity() const { return m_Velocity; }
 
+	void Particle::SetKinematic(const bool isKinematic) { m_IsKinematic = isKinematic; }
+	bool Particle::IsKinematic() const { return m_IsKinematic; }
+
+	void Particle::SetRebound(const Real rebound) { m_Rebound = rebound; }
+	Real Particle::GetRebound() const { return m_Rebound; }
+
+	Real Particle::GetInverseMass() const {
+		return m_IsKinematic ? 1 : 0;
+	}
+
 	void Particle::swap(Particle &other) noexcept {
 		std::swap(Data, other.Data);
 		std::swap(m_Shape, other.m_Shape);

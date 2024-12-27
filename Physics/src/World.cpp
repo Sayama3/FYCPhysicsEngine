@@ -127,6 +127,8 @@ namespace FYC {
 				auto a = it.GetID() < nextIt.GetID() ? it : nextIt;
 				auto b = it.GetID() < nextIt.GetID() ? nextIt : it;
 
+				if (!a->IsKinematic() && !b->IsKinematic()) continue;
+
 				{
 					Circle ca, cb;
 					AABB ra, rb;
@@ -151,13 +153,14 @@ namespace FYC {
 
 			if (!particleA || !particleB) continue;
 
-			const Real inverseWeightA = 1; //TODO: Fetch the weight later on.
-			const Real inverseWeightB = 1; //TODO: Fetch the weight later on.
-			const Real totalInverseWeight = inverseWeightA + inverseWeightB;
+			const Real inverseMassA = particleA->GetInverseMass();
+			const Real inverseMassB = particleB->GetInverseMass();
+			const Real totalInverseMass = inverseMassA + inverseMassB;
 
-			if (totalInverseWeight <= 0) continue;
+			if (totalInverseMass <= REAL_EPSILON) continue;
 
-			const Real rebound = 0.9;
+			const Real reboundA = particleA->GetRebound();
+			const Real reboundB = particleB->GetRebound();
 
 			const Vec2 velA = particleA->GetVelocity();
 			const Vec2 velB = particleB->GetVelocity();
@@ -165,26 +168,30 @@ namespace FYC {
 			const Real contactVelocity = Math::Dot(collision.CollisionNormal, velA - velB);
 
 			// Resolving velocity
-			if (contactVelocity <= 0 && totalInverseWeight > 0) {
-				const Real separatingVelocity = -contactVelocity * rebound;
-				const Real deltaVelocity = separatingVelocity - contactVelocity;
+			if (contactVelocity <= 0) {
+				const Real separatingVelocityA = -contactVelocity * reboundA;
+				const Real deltaVelocityA = separatingVelocityA - contactVelocity;
+				const Real separatingImpulseA = deltaVelocityA / totalInverseMass;
+				const Vec2 directedSeparatedImpulseA = collision.CollisionNormal * separatingImpulseA;
 
-				const Real separatingImpulse = deltaVelocity / totalInverseWeight;
-				const Vec2 directedSeparatedImpulsePerInvWeight = collision.CollisionNormal * separatingImpulse;
+				const Real separatingVelocityB = -contactVelocity * reboundB;
+				const Real deltaVelocityB = separatingVelocityB - contactVelocity;
+				const Real separatingImpulseB = deltaVelocityB / totalInverseMass;
+				const Vec2 directedSeparatedImpulseB = collision.CollisionNormal * separatingImpulseB;
 
-				particleA->SetVelocity(velA + directedSeparatedImpulsePerInvWeight * inverseWeightA);
-				particleB->SetVelocity(velB - directedSeparatedImpulsePerInvWeight * inverseWeightB);
+				particleA->SetVelocity(velA + directedSeparatedImpulseA * inverseMassA);
+				particleB->SetVelocity(velB - directedSeparatedImpulseB * inverseMassB);
 			}
 
 			// Resolving Interpenetration
-			if (collision.Interpenetration > 0 && totalInverseWeight > 0) {
+			if (collision.Interpenetration > 0) {
 				const Vec2 posA = particleA->GetPosition();
 				const Vec2 posB = particleB->GetPosition();
 
-				const Vec2 separatingMovementPerInverseWeight = collision.CollisionNormal * (collision.Interpenetration / totalInverseWeight);
+				const Vec2 separatingMovement = collision.CollisionNormal * (collision.Interpenetration / totalInverseMass);
 
-				particleA->SetPosition(posA + separatingMovementPerInverseWeight * inverseWeightA);
-				particleB->SetPosition(posB - separatingMovementPerInverseWeight * inverseWeightB);
+				particleA->SetPosition(posA + separatingMovement * inverseMassA);
+				particleB->SetPosition(posB - separatingMovement * inverseMassB);
 			}
 		}
 	}
@@ -196,10 +203,12 @@ namespace FYC {
 		{
 			for (auto& particle : *this)
 			{
+				if (!particle.IsKinematic()) continue;
+
 				bool changed = false;
 				Vec2 position = particle.GetPosition();
 				Vec2 velocity = particle.GetVelocity();
-				Real rebound = 0.9;
+				const Real rebound = particle.GetRebound();
 
 				Vec2 halfSize{0};
 				AABB particleAABB = AABB::FromCenterHalfSize(position, halfSize);
@@ -243,6 +252,7 @@ namespace FYC {
 	void World::Integrate(Real stepTime) {
 		for (auto& particle : *this)
 		{
+			if (!particle.IsKinematic()) continue;
 			particle.SetPosition(particle.GetPosition() + particle.m_Velocity * stepTime);
 			particle.SetVelocity(particle.GetVelocity() + particle.m_ConstantAccelerations * stepTime + particle.m_SummedAccelerations * stepTime);
 			particle.m_SummedAccelerations = Vec2{};
