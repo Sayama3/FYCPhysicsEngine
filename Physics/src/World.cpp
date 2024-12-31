@@ -72,6 +72,30 @@ namespace FYC {
 
 	World::~World() = default;
 
+	World::World(World &&other) noexcept :
+		m_Particles(std::move(other.m_Particles)),
+		m_Collisions(std::move(other.m_Collisions)),
+		m_CollisionCallbacks(std::move(other.m_CollisionCallbacks)),
+		m_TotalFrameCollisions(std::move(other.m_TotalFrameCollisions)),
+		m_IDGenerator(std::move(other.m_IDGenerator)),
+		Bounds(std::move(other.Bounds))
+	{
+	}
+
+	World & World::operator=(World&& other) noexcept {
+		swap(other);
+		return *this;
+	}
+
+	void World::swap(World &other) noexcept {
+		std::swap(m_Particles, other.m_Particles);
+		std::swap(m_Collisions, other.m_Collisions);
+		std::swap(m_CollisionCallbacks, other.m_CollisionCallbacks);
+		std::swap(m_TotalFrameCollisions, other.m_TotalFrameCollisions);
+		std::swap(m_IDGenerator, other.m_IDGenerator);
+		std::swap(Bounds, other.Bounds);
+	}
+
 	World::WorldIterator World::AddParticle() {
 		auto id = m_IDGenerator++;
 		m_Particles.insert({id, Particle{}});
@@ -108,6 +132,18 @@ namespace FYC {
 		return {*this, id};
 	}
 
+	World::WorldIterator World::SetParticle(const Particle& particle, const ID id) {
+		m_IDGenerator = std::max(m_IDGenerator, id+1);
+		m_Particles[id] = particle;
+		return {this, id};
+	}
+
+	World::WorldIterator World::SetParticle(Particle&& particle, ID id) {
+		m_IDGenerator = std::max(m_IDGenerator, id+1);
+		m_Particles[id] = std::move(particle);
+		return {this, id};
+	}
+
 	Particle* World::GetParticle(const ID id)
 	{
 		const auto it = m_Particles.find(id);
@@ -120,6 +156,17 @@ namespace FYC {
 		const auto it = m_Particles.find(id);
 		if (it != m_Particles.end()) return &it->second;
 		else return nullptr;
+	}
+
+	World::WorldIterator World::find(ID id) {
+		if (const auto it = m_Particles.find(id); it != m_Particles.end()) {
+			return {this, id};
+		}
+		return end();
+	}
+
+	uint64_t World::count() const {
+		return m_Particles.size();
 	}
 
 	void World::RemoveParticle(const ID id) {

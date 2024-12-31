@@ -35,6 +35,10 @@ private:
 
 	void UpdateLogic();
 	void UpdateRendering();
+
+	void LoadWorld(const std::filesystem::path &filepath);
+	void SaveWorld(const std::filesystem::path &filename) const;
+
 	void UpdateUI();
 private:
 	FYC::World& GetWorld() {return m_PhysicsMode == PhysicsMode::Edit ? m_WorldEdit : m_WorldPlay ;}

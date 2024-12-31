@@ -57,12 +57,8 @@ namespace FYC {
 		return Particle{AABB::FromCenterSize(position, size), velocity, constantAcceleration};
 	}
 
-	Particle::Particle(Particle&& other) noexcept
-		: Data(std::move(other.Data)),
-		  m_Shape(std::move(other.m_Shape)),
-		  m_Velocity(std::move(other.m_Velocity)),
-		  m_ConstantAccelerations(std::move(other.m_ConstantAccelerations)),
-		  m_SummedAccelerations(std::move(other.m_SummedAccelerations)) {
+	Particle::Particle(Particle&& other) noexcept {
+		swap(other);
 	}
 
 	Particle &Particle::operator=(Particle &&other) noexcept {

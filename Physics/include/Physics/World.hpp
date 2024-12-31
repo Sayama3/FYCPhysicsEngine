@@ -65,6 +65,10 @@ namespace FYC {
 		~World();
 		World(const World&) = default;
 		World& operator=(const World&) = default;
+		World(World&& other) noexcept;
+		World& operator=(World&& other) noexcept;
+	public:
+		void swap(World& other) noexcept;
 	public:
 		WorldIterator AddParticle();
 		WorldIterator AddParticle(const Particle::Shape& shape);
@@ -73,8 +77,14 @@ namespace FYC {
 		WorldIterator AddParticle(const Particle& particle);
 		WorldIterator AddParticle(Particle&& particle);
 
+		WorldIterator SetParticle(const Particle& particle, ID id);
+		WorldIterator SetParticle(Particle&& particle, ID id);
+
 		[[nodiscard]] Particle* GetParticle(ID id);
 		[[nodiscard]] const Particle* GetParticle(ID id) const;
+
+		WorldIterator find(ID id);
+		[[nodiscard]] uint64_t count() const;
 
 		void RemoveParticle(ID id);
 	public:

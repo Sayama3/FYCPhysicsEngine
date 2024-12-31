@@ -9,6 +9,7 @@
 #include <imgui.h>
 #include <rlImGui.h>
 #include "ImGuiLib.hpp"
+#include "WorldSerializer.hpp"
 
 using namespace FYC::Literal;
 
@@ -133,6 +134,22 @@ void Application::UpdateRendering() {
 	}
 }
 
+void Application::LoadWorld(const std::filesystem::path& filepath) {
+	std::ifstream file(filepath, std::ios::in  | std::ios::binary);
+	if (file) {
+		std::vector<char> binary((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		m_WorldPlay = m_WorldEdit = FYC::Application::WorldSerializer::FromBinary(binary);
+	}
+}
+
+void Application::SaveWorld(const std::filesystem::path& filename) const {
+	std::ofstream file(filename, std::ios::out  | std::ios::binary | std::ios::trunc);
+	if (file) {
+		const std::vector<char> binary = FYC::Application::WorldSerializer::ToBinary(m_WorldEdit);
+		file.write(binary.data(), binary.size());
+	}
+}
+
 void Application::UpdateUI() {
 	static bool showDemo = true;
 	if (showDemo) ImGui::ShowDemoWindow(&showDemo);
@@ -153,6 +170,23 @@ void Application::UpdateUI() {
 
 	ImGui::SetNextWindowSize({400, 400}, ImGuiCond_Once);
 	ImGui::Begin("Physics"); {
+
+		ImGui::BeginDisabled(m_PhysicsMode != PhysicsMode::Edit);
+		if (ImGui::Button("Save")) {
+			const std::filesystem::path filename = "world.fyc";
+			SaveWorld(filename);
+		}
+
+		if (ImGui::Button("Load")) {
+			const std::filesystem::path filename = "world.fyc";
+			LoadWorld(filename);
+		}
+
+		if (ImGui::Button("Clear")) {
+			m_WorldPlay = m_WorldEdit = FYC::World{};
+		}
+		ImGui::EndDisabled();
+
 		if (m_PhysicsMode != PhysicsMode::Edit) {
 			if (ImGui::Button("Stop")) {
 				m_PhysicsMode = PhysicsMode::Edit;

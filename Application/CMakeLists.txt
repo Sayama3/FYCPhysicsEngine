@@ -31,6 +31,8 @@ set(APPLICATION_SRC
 		src/Camera.cpp
 		include/Camera.hpp
 		include/ImGuiLib.hpp
+		src/WorldSerializer.cpp
+		include/WorldSerializer.hpp
 )
 add_executable(${PROJECT_NAME} ${APPLICATION_SRC} ${APPLICATION_VENDORS})
 
