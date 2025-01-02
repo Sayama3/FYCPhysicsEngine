@@ -27,6 +27,7 @@ Application::Application(int width, int height, const std::string &name)
 
 	LoadCharacter(c_CharacterSaveFile);
 	LoadWorld(c_WorldSaveFile);
+	LoadEnnemis(c_EnnemiSaveFile);
 }
 
 #if defined(PLATFORM_WEB)
@@ -112,7 +113,12 @@ void Application::UpdateLogic() {
 		float stepTime = std::min(GetFrameTime(), 1.0f);
 		UpdateCharacter(stepTime);
 		m_WorldPlay.Step(stepTime);
+		UpdateEnnemies(stepTime);
+		if (m_ShouldStop) {
+			Stop();
+		}
 	}
+
 }
 
 void Application::UpdateRendering() {
@@ -170,6 +176,49 @@ void Application::SaveCharacter(const std::filesystem::path &filename) const
 	}
 }
 
+
+void Application::LoadEnnemis(const std::filesystem::path &filepath)
+{
+	std::ifstream file(filepath, std::ios::in  | std::ios::binary);
+	if (file) {
+		std::vector<char> binary((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		auto&&[params, ids] =  FYC::Application::EnnemiSerializer::FromBinary(binary);
+		m_EnnemiParameters = params;
+		m_EnnemisIds = std::move(ids);
+	}
+}
+
+void Application::SaveEnnemis(const std::filesystem::path &filename) const
+{
+	std::ofstream file(filename, std::ios::out  | std::ios::binary | std::ios::trunc);
+	if (file) {
+		const std::vector<char> binary = FYC::Application::EnnemiSerializer::ToBinary(m_EnnemiParameters, m_EnnemisIds);
+		file.write(binary.data(), binary.size());
+	}
+}
+
+void Application::TryStop() {
+	m_ShouldStop = true;
+}
+
+void Application::Stop() {
+	m_PhysicsMode = PhysicsMode::Edit;
+	m_ShouldStop = false;
+	OnStop();
+}
+
+void Application::Play() {
+	m_PhysicsMode = PhysicsMode::Play;
+	m_WorldPlay = m_WorldEdit;
+	OnPlay();
+}
+
+void Application::SetPause(bool isPause) {
+	m_PhysicsMode = isPause ? PhysicsMode::Pause : PhysicsMode::Play;
+	if (m_PhysicsMode == PhysicsMode::Pause) OnPause();
+	else if (m_PhysicsMode == PhysicsMode::Play) OnResume();
+}
+
 void Application::UpdateUI() {
 	static bool showDemo = true;
 	if (showDemo) ImGui::ShowDemoWindow(&showDemo);
@@ -197,14 +246,29 @@ void Application::UpdateUI() {
 			ImGui::Text("No Main Character selected.");
 		}
 		ImGui::Spacing();
-		static const std::filesystem::path filename = c_CharacterSaveFile;
-		if (ImGui::Button("Save")) SaveCharacter(filename);
-		if (ImGui::Button("Load")) LoadCharacter(filename);
-		if (ImGui::Button("Clear")) m_CharacterController = {};
+		static const std::filesystem::path characterFilename = c_CharacterSaveFile;
+		static const std::filesystem::path ennemiFilename = c_EnnemiSaveFile;
+		if (ImGui::Button("Save")) {
+			SaveCharacter(characterFilename);
+			SaveEnnemis(ennemiFilename);
+		}
+		if (ImGui::Button("Load")) {
+			LoadCharacter(characterFilename);
+			LoadEnnemis(ennemiFilename);
+		}
+		if (ImGui::Button("Clear")) {
+			m_CharacterController = {};
+			m_EnnemiParameters = {};
+			m_EnnemisIds = {};
+		}
 
+		ImGui::Separator();
 		ImGuiLib::DragReal("Movement Acceleration", &m_CharacterController.MovementAcceleration);
 		ImGuiLib::DragReal("Jump Impulse", &m_CharacterController.JumpImpulse);
 		ImGui::Checkbox("CanJump", &m_CharacterController.CanJump);
+		ImGui::Separator();
+		ImGuiLib::DragReal("Ennemi Speed", &m_EnnemiParameters.Speed);
+		ImGuiLib::DragReal("Threshold to Kill an ennemi", &m_EnnemiParameters.ThresholdKillEnnemi);
 	}
 	ImGui::End();
 
@@ -226,23 +290,18 @@ void Application::UpdateUI() {
 
 		if (m_PhysicsMode != PhysicsMode::Edit) {
 			if (ImGui::Button("Stop")) {
-				m_PhysicsMode = PhysicsMode::Edit;
-				OnStop();
+				Stop();
 			}
 		} else {
 			if (ImGui::Button("Play")) {
-				m_PhysicsMode = PhysicsMode::Play;
-				m_WorldPlay = m_WorldEdit;
-				OnPlay();
+				Play();
 			}
 		}
 
 		if (m_PhysicsMode != PhysicsMode::Edit) {
 			bool isPause = m_PhysicsMode == PhysicsMode::Pause;
 			if (ImGui::Checkbox("Pause", &isPause)) {
-				m_PhysicsMode = isPause ? PhysicsMode::Pause : PhysicsMode::Play;
-				if (m_PhysicsMode == PhysicsMode::Pause) OnPause();
-				else if (m_PhysicsMode == PhysicsMode::Play) OnResume();
+				SetPause(isPause);
 			}
 		}
 
@@ -306,9 +365,25 @@ void Application::UpdateUI() {
 				if (ImGui::Button("Change Shape to Circle")) particle.SetCircleRadius(0.5);
 			}
 
-			if (m_CharacterController.MainCharacterParticle != it.GetID() && particle.IsKinematic()) {
+			bool isMainCharacter = m_CharacterController.MainCharacterParticle == it.GetID();
+			std::vector<FYC::World::ID>::iterator ennemiIt;
+			bool isEnnemi = !isMainCharacter && (ennemiIt = std::find(m_EnnemisIds.begin(), m_EnnemisIds.end(), it.GetID())) != m_EnnemisIds.end();
+
+			if (!isMainCharacter && !isEnnemi && particle.IsKinematic()) {
 				if (ImGui::Button("Set As MainCharacter")) {
 					m_CharacterController.MainCharacterParticle = it.GetID();
+				}
+			}
+
+			if (particle.IsKinematic() && !isMainCharacter) {
+				if (isEnnemi) {
+					if (ImGui::Button("Remove From Ennemi")) {
+						m_EnnemisIds.erase(ennemiIt);
+					}
+				} else {
+					if (ImGui::Button("Add To Ennemi")) {
+						m_EnnemisIds.push_back(it.GetID());
+					}
 				}
 			}
 
@@ -386,11 +461,32 @@ void Application::UpdateCharacter(FYC::Real stepTime) {
 }
 
 
+void Application::UpdateEnnemies(FYC::Real stepTime) {
+	for (auto id : m_EnnemisIds) {
+		auto ptr = m_WorldPlay.GetParticle(id);
+		if (!ptr) continue;
+		ptr->SetVelocity({FYC::Math::Sign(ptr->GetVelocity().x) * m_EnnemiParameters.Speed, ptr->GetVelocity().y});
+	}
+}
+
 void Application::OnCollision(FYC::World::WorldIterator particle, FYC::World::WorldIterator other, FYC::Collision collisionData)
 {
 	if (particle.GetID() != m_CharacterController.MainCharacterParticle) return;
+
 	if (collisionData.HalfWayInterpenetratingPoint.y > particle->GetPosition().y)
 		m_CharacterController.CanJump = true;
+
+	if (!other) {
+		TryStop();
+	}
+
+	if (std::find(m_EnnemisIds.begin(), m_EnnemisIds.end(), other.GetID()) != m_EnnemisIds.end()) {
+		if (other->GetPosition().y - particle->GetPosition().y > m_EnnemiParameters.ThresholdKillEnnemi) {
+			m_WorldPlay.RemoveParticle(other.GetID());
+		} else {
+			TryStop();
+		}
+	}
 }
 
 void Application::OnStop()

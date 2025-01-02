@@ -8,6 +8,7 @@
 
 #include "Camera.hpp"
 #include "CharacterController.hpp"
+#include "EnnemiParameters.hpp"
 #include "Physics/World.hpp"
 
 #if defined(PLATFORM_WEB)
@@ -32,6 +33,7 @@ public:
 public:
 	inline static const char* const c_WorldSaveFile {"world.fyc"};
 	inline static const char* const c_CharacterSaveFile {"character.fyc"};
+	inline static const char* const c_EnnemiSaveFile {"ennemi.fyc"};
 public:
 	void Run();
 private:
@@ -46,9 +48,19 @@ private:
 	void LoadCharacter(const std::filesystem::path &filepath);
 	void SaveCharacter(const std::filesystem::path &filename) const;
 
+	void LoadEnnemis(const std::filesystem::path &filepath);
+	void SaveEnnemis(const std::filesystem::path &filename) const;
+
+	void TryStop();
+
+	void Stop();
+	void Play();
+	void SetPause(bool isPause);
+
 	void UpdateUI();
 private:
 	void UpdateCharacter(FYC::Real stepTime);
+	void UpdateEnnemies(FYC::Real stepTime);
 	void OnCollision(FYC::World::WorldIterator particle, FYC::World::WorldIterator other, FYC::Collision collisionData);
 	void OnStop();
 	void OnPlay();
@@ -58,6 +70,9 @@ private:
 	FYC::World& GetWorld() {return m_PhysicsMode == PhysicsMode::Edit ? m_WorldEdit : m_WorldPlay ;}
 private:
 	FYC::Application::CharacterController m_CharacterController;
+	FYC::Application::EnnemiParameters m_EnnemiParameters;
+	std::vector<FYC::World::ID> m_EnnemisIds;
+	bool m_ShouldStop = false;
 private:
 	bool m_ImGuiIsActive = false;
 	PhysicsMode m_PhysicsMode = PhysicsMode::Edit;

@@ -35,6 +35,8 @@ set(APPLICATION_SRC
 		include/WorldSerializer.hpp
 		src/CharacterController.cpp
 		include/CharacterController.hpp
+		src/EnnemiParameters.cpp
+		include/EnnemiParameters.hpp
 )
 add_executable(${PROJECT_NAME} ${APPLICATION_SRC} ${APPLICATION_VENDORS})
 
