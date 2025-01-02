@@ -7,6 +7,7 @@
 #include <raylib.h>
 
 #include "Camera.hpp"
+#include "CharacterController.hpp"
 #include "Physics/World.hpp"
 
 #if defined(PLATFORM_WEB)
@@ -29,6 +30,9 @@ public:
 	Application(const Application &) = delete;
 	Application &operator=(const Application &) = delete;
 public:
+	inline static const char* const c_WorldSaveFile {"world.fyc"};
+	inline static const char* const c_CharacterSaveFile {"character.fyc"};
+public:
 	void Run();
 private:
 	void Update();
@@ -39,9 +43,21 @@ private:
 	void LoadWorld(const std::filesystem::path &filepath);
 	void SaveWorld(const std::filesystem::path &filename) const;
 
+	void LoadCharacter(const std::filesystem::path &filepath);
+	void SaveCharacter(const std::filesystem::path &filename) const;
+
 	void UpdateUI();
 private:
+	void UpdateCharacter(FYC::Real stepTime);
+	void OnCollision(FYC::World::WorldIterator particle, FYC::World::WorldIterator other, FYC::Collision collisionData);
+	void OnStop();
+	void OnPlay();
+	void OnPause();
+	void OnResume();
+private:
 	FYC::World& GetWorld() {return m_PhysicsMode == PhysicsMode::Edit ? m_WorldEdit : m_WorldPlay ;}
+private:
+	FYC::Application::CharacterController m_CharacterController;
 private:
 	bool m_ImGuiIsActive = false;
 	PhysicsMode m_PhysicsMode = PhysicsMode::Edit;

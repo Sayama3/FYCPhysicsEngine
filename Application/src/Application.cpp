@@ -23,8 +23,10 @@ Application::Application(int width, int height, const std::string &name)
 	//--------------------------------------------------------------------------------------
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE); // Window configuration flags
 	InitWindow(width, height, name.c_str());
-
 	rlImGuiSetup(true); // sets up ImGui with either a dark or light default theme
+
+	LoadCharacter(c_CharacterSaveFile);
+	LoadWorld(c_WorldSaveFile);
 }
 
 #if defined(PLATFORM_WEB)
@@ -89,10 +91,10 @@ void Application::UpdateLogic() {
 		} else {
 			FYC::Vec2 movement{};
 
-			if (IsKeyDown(KeyboardKey::KEY_W) || IsKeyDown(KeyboardKey::KEY_UP)) movement += {+0, -1};
-			if (IsKeyDown(KeyboardKey::KEY_S) || IsKeyDown(KeyboardKey::KEY_DOWN)) movement += {+0, +1};
-			if (IsKeyDown(KeyboardKey::KEY_D) || IsKeyDown(KeyboardKey::KEY_RIGHT)) movement += {+1, +0};
-			if (IsKeyDown(KeyboardKey::KEY_A) || IsKeyDown(KeyboardKey::KEY_LEFT)) movement += {-1, +0};
+			if (/*IsKeyDown(KeyboardKey::KEY_W) || */IsKeyDown(KeyboardKey::KEY_UP)) movement += {+0, -1};
+			if (/*IsKeyDown(KeyboardKey::KEY_S) || */IsKeyDown(KeyboardKey::KEY_DOWN)) movement += {+0, +1};
+			if (/*IsKeyDown(KeyboardKey::KEY_D) || */IsKeyDown(KeyboardKey::KEY_RIGHT)) movement += {+1, +0};
+			if (/*IsKeyDown(KeyboardKey::KEY_A) || */IsKeyDown(KeyboardKey::KEY_LEFT)) movement += {-1, +0};
 
 			Vector2 mouseWheel = GetMouseWheelMoveV();
 			FYC::Real zoom = 1 + mouseWheel.y * m_CameraZoomSpeed;
@@ -108,6 +110,7 @@ void Application::UpdateLogic() {
 
 	if (m_PhysicsMode == PhysicsMode::Play) {
 		float stepTime = std::min(GetFrameTime(), 1.0f);
+		UpdateCharacter(stepTime);
 		m_WorldPlay.Step(stepTime);
 	}
 }
@@ -150,6 +153,23 @@ void Application::SaveWorld(const std::filesystem::path& filename) const {
 	}
 }
 
+void Application::LoadCharacter(const std::filesystem::path &filepath)
+{
+	std::ifstream file(filepath, std::ios::in  | std::ios::binary);
+	if (!file) return;
+	std::vector<char> binary((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	if (binary.size() != sizeof(FYC::Application::CharacterController)) return;
+	m_CharacterController = *reinterpret_cast<FYC::Application::CharacterController*>(binary.data());
+}
+
+void Application::SaveCharacter(const std::filesystem::path &filename) const
+{
+	std::ofstream file(filename, std::ios::out  | std::ios::binary | std::ios::trunc);
+	if (file) {
+		file.write(reinterpret_cast<const char*>(&m_CharacterController), sizeof(m_CharacterController));
+	}
+}
+
 void Application::UpdateUI() {
 	static bool showDemo = true;
 	if (showDemo) ImGui::ShowDemoWindow(&showDemo);
@@ -169,19 +189,36 @@ void Application::UpdateUI() {
 	ImGui::End();
 
 	ImGui::SetNextWindowSize({400, 400}, ImGuiCond_Once);
+	ImGui::Begin("Game");
+	{
+		if (auto ptr = GetWorld().GetParticle(m_CharacterController.MainCharacterParticle)) {
+			ImGui::Text("MainCharaceter is '%ull'", m_CharacterController.MainCharacterParticle);
+		} else {
+			ImGui::Text("No Main Character selected.");
+		}
+		ImGui::Spacing();
+		static const std::filesystem::path filename = c_CharacterSaveFile;
+		if (ImGui::Button("Save")) SaveCharacter(filename);
+		if (ImGui::Button("Load")) LoadCharacter(filename);
+		if (ImGui::Button("Clear")) m_CharacterController = {};
+
+		ImGuiLib::DragReal("Movement Acceleration", &m_CharacterController.MovementAcceleration);
+		ImGuiLib::DragReal("Jump Impulse", &m_CharacterController.JumpImpulse);
+		ImGui::Checkbox("CanJump", &m_CharacterController.CanJump);
+	}
+	ImGui::End();
+
+	ImGui::SetNextWindowSize({400, 400}, ImGuiCond_Once);
 	ImGui::Begin("Physics"); {
 
+		static const std::filesystem::path filename = c_WorldSaveFile;
 		ImGui::BeginDisabled(m_PhysicsMode != PhysicsMode::Edit);
 		if (ImGui::Button("Save")) {
-			const std::filesystem::path filename = "world.fyc";
 			SaveWorld(filename);
 		}
-
 		if (ImGui::Button("Load")) {
-			const std::filesystem::path filename = "world.fyc";
 			LoadWorld(filename);
 		}
-
 		if (ImGui::Button("Clear")) {
 			m_WorldPlay = m_WorldEdit = FYC::World{};
 		}
@@ -190,11 +227,13 @@ void Application::UpdateUI() {
 		if (m_PhysicsMode != PhysicsMode::Edit) {
 			if (ImGui::Button("Stop")) {
 				m_PhysicsMode = PhysicsMode::Edit;
+				OnStop();
 			}
 		} else {
 			if (ImGui::Button("Play")) {
 				m_PhysicsMode = PhysicsMode::Play;
 				m_WorldPlay = m_WorldEdit;
+				OnPlay();
 			}
 		}
 
@@ -202,6 +241,8 @@ void Application::UpdateUI() {
 			bool isPause = m_PhysicsMode == PhysicsMode::Pause;
 			if (ImGui::Checkbox("Pause", &isPause)) {
 				m_PhysicsMode = isPause ? PhysicsMode::Pause : PhysicsMode::Play;
+				if (m_PhysicsMode == PhysicsMode::Pause) OnPause();
+				else if (m_PhysicsMode == PhysicsMode::Play) OnResume();
 			}
 		}
 
@@ -265,6 +306,12 @@ void Application::UpdateUI() {
 				if (ImGui::Button("Change Shape to Circle")) particle.SetCircleRadius(0.5);
 			}
 
+			if (m_CharacterController.MainCharacterParticle != it.GetID() && particle.IsKinematic()) {
+				if (ImGui::Button("Set As MainCharacter")) {
+					m_CharacterController.MainCharacterParticle = it.GetID();
+				}
+			}
+
 			bool isKinematic = particle.IsKinematic();
 			if (ImGui::Checkbox("Is Kinematic", &isKinematic)) particle.SetKinematic(isKinematic);
 			auto position = particle.GetPosition();
@@ -316,6 +363,58 @@ void Application::UpdateUI() {
 	}
 	ImGui::End();
 }
+
+void Application::UpdateCharacter(FYC::Real stepTime) {
+	auto it = GetWorld().find(m_CharacterController.MainCharacterParticle);
+	if (it) {
+		FYC::Vec2 movement{};
+		if (IsKeyDown(m_CharacterController.RightKey)) movement.x += 1;
+		if (IsKeyDown(m_CharacterController.LeftKey)) movement.x -= 1;
+
+		if (movement.x != 0)
+		{
+			FYC::Math::NormalizeInPlace(movement);
+			it->AddAcceleration(movement * m_CharacterController.MovementAcceleration);
+		}
+
+		if (IsKeyPressed(m_CharacterController.JumpKey) && m_CharacterController.CanJump) {
+			m_CharacterController.CanJump = false;
+			it->SetPosition(it->GetPosition() - FYC::Vec2{0,0.005});
+			it->SubAcceleration({0,m_CharacterController.JumpImpulse / stepTime});
+		}
+	}
+}
+
+
+void Application::OnCollision(FYC::World::WorldIterator particle, FYC::World::WorldIterator other, FYC::Collision collisionData)
+{
+	if (particle.GetID() != m_CharacterController.MainCharacterParticle) return;
+	if (collisionData.HalfWayInterpenetratingPoint.y > particle->GetPosition().y)
+		m_CharacterController.CanJump = true;
+}
+
+void Application::OnStop()
+{
+	m_CharacterController.CanJump = false;
+	m_WorldPlay.RemoveAllCallback();
+}
+
+void Application::OnPlay()
+{
+	if (!m_WorldPlay.GetParticle(m_CharacterController.MainCharacterParticle)) return;
+	m_WorldPlay.SetCallback(m_CharacterController.MainCharacterParticle, [this](FYC::World::WorldIterator particle, FYC::World::WorldIterator other, FYC::Collision collisionData){OnCollision(particle,other,collisionData);});
+}
+
+void Application::OnPause()
+{
+
+}
+
+void Application::OnResume()
+{
+
+}
+
 
 Application::~Application() {
 	// De-Initialization
