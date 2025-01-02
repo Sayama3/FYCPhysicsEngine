@@ -13,6 +13,7 @@
     </sourceRoots>
     <libraryRoots>
       <file path="$PROJECT_DIR$/Application/vendors" />
+      <file path="$PROJECT_DIR$/Libraries" />
       <file path="$PROJECT_DIR$/Libraries/raylib-5.5" />
     </libraryRoots>
     <excludeRoots>

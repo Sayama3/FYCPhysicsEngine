@@ -33,6 +33,10 @@ set(APPLICATION_SRC
 		include/ImGuiLib.hpp
 		src/WorldSerializer.cpp
 		include/WorldSerializer.hpp
+		src/CharacterController.cpp
+		include/CharacterController.hpp
+		src/EnemyParameters.cpp
+		include/EnemyParameters.hpp
 )
 add_executable(${PROJECT_NAME} ${APPLICATION_SRC} ${APPLICATION_VENDORS})
 
