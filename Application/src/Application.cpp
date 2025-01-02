@@ -18,7 +18,7 @@ using namespace FYC::Literal;
 #endif
 
 Application::Application(int width, int height, const std::string &name)
-	: m_Width(width), m_Height(height), m_Camera(m_Width, m_Height) {
+	: m_Width(width), m_Height(height), m_Camera(m_Width, m_Height, 30) {
 	// Initialization
 	//--------------------------------------------------------------------------------------
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE); // Window configuration flags
@@ -28,6 +28,10 @@ Application::Application(int width, int height, const std::string &name)
 	LoadCharacter(c_CharacterSaveFile);
 	LoadWorld(c_WorldSaveFile);
 	LoadEnnemis(c_EnnemiSaveFile);
+	LoadDeathPlatforms(c_DeathPlatformsSaveFile);
+	LoadWinPlatforms(c_WinPlatformsSaveFile);
+
+	Play();
 }
 
 #if defined(PLATFORM_WEB)
@@ -85,6 +89,7 @@ void Application::Update() {
 void Application::UpdateLogic() {
 	m_Camera.SetViewport(m_Width, m_Height);
 
+#if false
 	if (!m_ImGuiIsActive) {
 		if (IsKeyDown(KEY_R)) {
 			m_Camera.SetPosition({0, 0});
@@ -108,8 +113,10 @@ void Application::UpdateLogic() {
 			m_Camera.MultiplyZoom(zoom);
 		}
 	}
+#endif
 
 	if (m_PhysicsMode == PhysicsMode::Play) {
+		if (IsKeyPressed(KeyboardKey::KEY_E)) TryRestart();
 		float stepTime = std::min(GetFrameTime(), 1.0f);
 		UpdateCharacter(stepTime);
 		m_WorldPlay.Step(stepTime);
@@ -117,6 +124,10 @@ void Application::UpdateLogic() {
 		if (m_ShouldStop) {
 			Stop();
 		}
+	}
+
+	if (m_ShouldStart) {
+		Play();
 	}
 
 }
@@ -197,8 +208,44 @@ void Application::SaveEnnemis(const std::filesystem::path &filename) const
 	}
 }
 
+void Application::LoadDeathPlatforms(const std::filesystem::path &filepath) {
+	std::ifstream file(filepath, std::ios::in  | std::ios::binary);
+	if (!file) return;
+	std::vector<char> binary((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	uint64_t count = binary.size() / sizeof(FYC::World::ID);
+	m_DeathPlatforms.clear();
+	m_DeathPlatforms.assign(reinterpret_cast<FYC::World::ID*>(binary.data()), reinterpret_cast<FYC::World::ID*>(binary.data()) + count);
+}
+
+void Application::SaveDeathPlatforms(const std::filesystem::path &filename) const {
+	std::ofstream file(filename, std::ios::out  | std::ios::binary | std::ios::trunc);
+	if (file) {
+		file.write(reinterpret_cast<const char*>(m_DeathPlatforms.data()), sizeof(FYC::World::ID) * m_DeathPlatforms.size());
+	}
+}
+
+void Application::LoadWinPlatforms(const std::filesystem::path &filepath) {
+	std::ifstream file(filepath, std::ios::in  | std::ios::binary);
+	if (!file) return;
+	std::vector<char> binary((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	if (binary.size() != sizeof(FYC::World::ID)) return;
+	m_WinPlatform = *reinterpret_cast<FYC::World::ID*>(binary.data());
+}
+
+void Application::SaveWinPlatforms(const std::filesystem::path &filename) const {
+	std::ofstream file(filename, std::ios::out  | std::ios::binary | std::ios::trunc);
+	if (file) {
+		file.write(reinterpret_cast<const char*>(&m_WinPlatform), sizeof(m_WinPlatform));
+	}
+}
+
 void Application::TryStop() {
 	m_ShouldStop = true;
+}
+
+void Application::TryRestart() {
+	m_ShouldStop = true;
+	m_ShouldStart = true;
 }
 
 void Application::Stop() {
@@ -210,6 +257,7 @@ void Application::Stop() {
 void Application::Play() {
 	m_PhysicsMode = PhysicsMode::Play;
 	m_WorldPlay = m_WorldEdit;
+	m_ShouldStart = false;
 	OnPlay();
 }
 
@@ -220,6 +268,27 @@ void Application::SetPause(bool isPause) {
 }
 
 void Application::UpdateUI() {
+	// ========== RAYLIB ==========
+
+	static const char* const MoveText = "Move with 'Q'/'D'";
+	static const char* const JumpText = "Jump with the space bar";
+	static const char* const RestartText = "Restart with 'E'";
+
+	if (m_PhysicsMode != PhysicsMode::Edit) {
+		DrawText(MoveText, 10, 10, 26, Color{30, 40, 50, 255});
+		DrawText(JumpText, 10, 40, 26, Color{30, 40, 50, 255});
+		DrawText(RestartText, 10, 70, 26, Color{30, 40, 50, 255});
+	}
+
+	static const char* const YouWonText = "You Won !!!";
+	static constexpr int fontSize = 42;
+
+	if (m_HasWon) {
+		const int textSize = MeasureText(YouWonText, fontSize);
+		DrawText(YouWonText, m_Width / 2 - textSize/2, m_Height / 4, fontSize, Color{180, 50, 50, 180});
+	}
+#if false
+	// ========== IMGUI ==========
 	static bool showDemo = true;
 	if (showDemo) ImGui::ShowDemoWindow(&showDemo);
 
@@ -248,18 +317,28 @@ void Application::UpdateUI() {
 		ImGui::Spacing();
 		static const std::filesystem::path characterFilename = c_CharacterSaveFile;
 		static const std::filesystem::path ennemiFilename = c_EnnemiSaveFile;
+		static const std::filesystem::path deathPlatformFilename = c_DeathPlatformsSaveFile;
+		static const std::filesystem::path winPlatformFilename = c_WinPlatformsSaveFile;
 		if (ImGui::Button("Save")) {
 			SaveCharacter(characterFilename);
 			SaveEnnemis(ennemiFilename);
+			SaveDeathPlatforms(deathPlatformFilename);
+			SaveWinPlatforms(winPlatformFilename);
 		}
+
 		if (ImGui::Button("Load")) {
 			LoadCharacter(characterFilename);
 			LoadEnnemis(ennemiFilename);
+			LoadDeathPlatforms(deathPlatformFilename);
+			LoadWinPlatforms(winPlatformFilename);
 		}
+
 		if (ImGui::Button("Clear")) {
 			m_CharacterController = {};
 			m_EnnemiParameters = {};
 			m_EnnemisIds = {};
+			m_DeathPlatforms = {};
+			m_WinPlatform = FYC::World::NULL_ID;
 		}
 
 		ImGui::Separator();
@@ -366,8 +445,9 @@ void Application::UpdateUI() {
 			}
 
 			bool isMainCharacter = m_CharacterController.MainCharacterParticle == it.GetID();
-			std::vector<FYC::World::ID>::iterator ennemiIt;
-			bool isEnnemi = !isMainCharacter && (ennemiIt = std::find(m_EnnemisIds.begin(), m_EnnemisIds.end(), it.GetID())) != m_EnnemisIds.end();
+			std::vector<FYC::World::ID>::iterator objectIt;
+			bool isEnnemi = !isMainCharacter && (objectIt = std::find(m_EnnemisIds.begin(), m_EnnemisIds.end(), it.GetID())) != m_EnnemisIds.end();
+			bool isDeathPlatform = !isMainCharacter && !isEnnemi && (objectIt = std::find(m_DeathPlatforms.begin(), m_DeathPlatforms.end(), it.GetID())) != m_DeathPlatforms.end();
 
 			if (!isMainCharacter && !isEnnemi && particle.IsKinematic()) {
 				if (ImGui::Button("Set As MainCharacter")) {
@@ -378,11 +458,35 @@ void Application::UpdateUI() {
 			if (particle.IsKinematic() && !isMainCharacter) {
 				if (isEnnemi) {
 					if (ImGui::Button("Remove From Ennemi")) {
-						m_EnnemisIds.erase(ennemiIt);
+						m_EnnemisIds.erase(objectIt);
 					}
 				} else {
 					if (ImGui::Button("Add To Ennemi")) {
 						m_EnnemisIds.push_back(it.GetID());
+					}
+				}
+			}
+
+			if (!isMainCharacter && !isEnnemi) {
+				if (isDeathPlatform) {
+					if (ImGui::Button("Remove from Deadly")) {
+						m_DeathPlatforms.erase(objectIt);
+					}
+				} else {
+					if (ImGui::Button("Set as Deadly")) {
+						m_DeathPlatforms.push_back(it.GetID());
+					}
+				}
+			}
+
+			if (!isMainCharacter && !isEnnemi && !isDeathPlatform) {
+				if (it.GetID() == m_WinPlatform) {
+					if (ImGui::Button("Remove from WinPlatform")) {
+						m_WinPlatform = FYC::World::NULL_ID;
+					}
+				} else {
+					if (ImGui::Button("Set as WinPlatform")) {
+						m_WinPlatform = it.GetID();
 					}
 				}
 			}
@@ -437,6 +541,7 @@ void Application::UpdateUI() {
 		}
 	}
 	ImGui::End();
+	#endif
 }
 
 void Application::UpdateCharacter(FYC::Real stepTime) {
@@ -477,26 +582,40 @@ void Application::OnCollision(FYC::World::WorldIterator particle, FYC::World::Wo
 		m_CharacterController.CanJump = true;
 
 	if (!other) {
-		TryStop();
+		TryRestart();
 	}
 
 	if (std::find(m_EnnemisIds.begin(), m_EnnemisIds.end(), other.GetID()) != m_EnnemisIds.end()) {
 		if (other->GetPosition().y - particle->GetPosition().y > m_EnnemiParameters.ThresholdKillEnnemi) {
 			m_WorldPlay.RemoveParticle(other.GetID());
 		} else {
-			TryStop();
+			TryRestart();
 		}
 	}
+
+	if (std::find(m_DeathPlatforms.begin(), m_DeathPlatforms.end(), other.GetID()) != m_DeathPlatforms.end()) {
+		TryRestart();
+	}
+
+	if (other.GetID() == m_WinPlatform) {
+		SetWinFlag(true);
+	}
+}
+
+void Application::SetWinFlag(bool win) {
+	m_HasWon = win;
 }
 
 void Application::OnStop()
 {
 	m_CharacterController.CanJump = false;
 	m_WorldPlay.RemoveAllCallback();
+	m_HasWon = false;
 }
 
 void Application::OnPlay()
 {
+	m_HasWon = false;
 	if (!m_WorldPlay.GetParticle(m_CharacterController.MainCharacterParticle)) return;
 	m_WorldPlay.SetCallback(m_CharacterController.MainCharacterParticle, [this](FYC::World::WorldIterator particle, FYC::World::WorldIterator other, FYC::Collision collisionData){OnCollision(particle,other,collisionData);});
 }

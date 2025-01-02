@@ -34,6 +34,8 @@ public:
 	inline static const char* const c_WorldSaveFile {"world.fyc"};
 	inline static const char* const c_CharacterSaveFile {"character.fyc"};
 	inline static const char* const c_EnnemiSaveFile {"ennemi.fyc"};
+	inline static const char* const c_DeathPlatformsSaveFile {"deathplatform.fyc"};
+	inline static const char* const c_WinPlatformsSaveFile {"win.fyc"};
 public:
 	void Run();
 private:
@@ -51,7 +53,14 @@ private:
 	void LoadEnnemis(const std::filesystem::path &filepath);
 	void SaveEnnemis(const std::filesystem::path &filename) const;
 
+	void LoadDeathPlatforms(const std::filesystem::path &filepath);
+	void SaveDeathPlatforms(const std::filesystem::path &filename) const;
+
+	void LoadWinPlatforms(const std::filesystem::path &filepath);
+	void SaveWinPlatforms(const std::filesystem::path &filename) const;
+
 	void TryStop();
+	void TryRestart();
 
 	void Stop();
 	void Play();
@@ -62,6 +71,7 @@ private:
 	void UpdateCharacter(FYC::Real stepTime);
 	void UpdateEnnemies(FYC::Real stepTime);
 	void OnCollision(FYC::World::WorldIterator particle, FYC::World::WorldIterator other, FYC::Collision collisionData);
+	void SetWinFlag(bool win);
 	void OnStop();
 	void OnPlay();
 	void OnPause();
@@ -72,7 +82,11 @@ private:
 	FYC::Application::CharacterController m_CharacterController;
 	FYC::Application::EnnemiParameters m_EnnemiParameters;
 	std::vector<FYC::World::ID> m_EnnemisIds;
+	std::vector<FYC::World::ID> m_DeathPlatforms;
+	FYC::World::ID m_WinPlatform = FYC::World::NULL_ID;
 	bool m_ShouldStop = false;
+	bool m_ShouldStart = false;
+	bool m_HasWon = false;
 private:
 	bool m_ImGuiIsActive = false;
 	PhysicsMode m_PhysicsMode = PhysicsMode::Edit;
