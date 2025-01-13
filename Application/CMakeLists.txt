@@ -33,6 +33,8 @@ set(APPLICATION_SRC
 		include/ImGuiLib.hpp
 		src/WorldSerializer.cpp
 		include/WorldSerializer.hpp
+		src/Canon.cpp
+		include/Canon.hpp
 )
 add_executable(${PROJECT_NAME} ${APPLICATION_SRC} ${APPLICATION_VENDORS})
 

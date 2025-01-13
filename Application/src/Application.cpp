@@ -108,11 +108,18 @@ void Application::UpdateLogic() {
 
 	if (m_PhysicsMode == PhysicsMode::Play) {
 		float stepTime = std::min(GetFrameTime(), 1.0f);
+
+		if (IsKeyPressed(KeyboardKey::KEY_G)) {
+			m_WorldPlay.AddParticle(m_Canon.Shoot());
+		}
+
 		m_WorldPlay.Step(stepTime);
 	}
 }
 
 void Application::UpdateRendering() {
+	m_Canon.Draw();
+
 	for (const auto& particle : GetWorld()) {
 		if (particle.Data.type() != typeid(Color)) continue;
 		auto pos = particle.GetPosition();
@@ -315,6 +322,11 @@ void Application::UpdateUI() {
 		}
 	}
 	ImGui::End();
+
+	std::optional<FYC::Particle> p = m_Canon.RenderImGui(m_PhysicsMode != PhysicsMode::Edit);
+	if (m_PhysicsMode != PhysicsMode::Edit && p.has_value()) {
+		m_WorldPlay.AddParticle(p.value());
+	}
 }
 
 Application::~Application() {

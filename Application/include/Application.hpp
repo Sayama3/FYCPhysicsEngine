@@ -7,6 +7,7 @@
 #include <raylib.h>
 
 #include "Camera.hpp"
+#include "Canon.hpp"
 #include "Physics/World.hpp"
 
 #if defined(PLATFORM_WEB)
@@ -52,4 +53,5 @@ private:
 	FYC::Application::Camera m_Camera;
 	FYC::World m_WorldEdit;
 	FYC::World m_WorldPlay;
+	FYC::Application::Canon m_Canon;
 };
