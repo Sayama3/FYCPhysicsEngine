@@ -1,4 +1,4 @@
-name: Build FYC Project
+name: Build Project
 
 on:
   push:
@@ -76,7 +76,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: "FYCApplication-${{ matrix.os }}-${{matrix.compiler}}"
+          retention-days: 7
           path: |
             ${{github.workspace}}/build/Application/*FYCPhysicsEngine*
-            Levels/*
+            ${{github.workspace}}/build/Application/*.fyc
+            
             
