@@ -17,8 +17,8 @@ using namespace FYC::Literal;
 #include <emscripten/emscripten.h>
 #endif
 
-Application::Application(int width, int height, const std::string &name)
-	: m_Width(width), m_Height(height), m_Camera(m_Width, m_Height, 30) {
+Application::Application(int width, int height, const std::string &name, bool isEditing)
+	: m_IsEditing(isEditing), m_Width(width), m_Height(height), m_Camera(static_cast<FYC::Real>(m_Width), static_cast<FYC::Real>(m_Height), 30) {
 	// Initialization
 	//--------------------------------------------------------------------------------------
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE); // Window configuration flags
@@ -27,7 +27,7 @@ Application::Application(int width, int height, const std::string &name)
 	rlImGuiSetup(true); // sets up ImGui with either a dark or light default theme
 	LoadAll();
 
-	if (!c_IsEditing) Play();
+	if (!m_IsEditing) Play();
 }
 
 #if defined(PLATFORM_WEB)
@@ -138,7 +138,7 @@ void Application::UpdateCamera() {
 void Application::UpdateLogic() {
 	m_Camera.SetViewport(m_Width, m_Height);
 
-	if (c_IsEditing) UpdateCamera();
+	if (m_IsEditing) UpdateCamera();
 
 	if (m_PhysicsMode == PhysicsMode::Play) {
 		if (IsKeyPressed(KeyboardKey::KEY_E)) TryRestart();
@@ -763,7 +763,7 @@ void Application::UpdateUI() {
 		DrawText(YouWonText, m_Width / 2 - textSize / 2, m_Height / 4, fontSize, Color{180, 50, 40, 180});
 	}
 
-	if (c_IsEditing) RenderImGui();
+	if (m_IsEditing) RenderImGui();
 }
 
 Application::~Application() {

@@ -26,12 +26,12 @@ class Application {
 	friend void UpdateLoop(void* arg);
 #endif
 public:
-	Application(int width = 800, int height = 450, const std::string& name = "Application");
+	Application(int width = 800, int height = 450, const std::string& name = "Application", bool isEditing = false);
 	~Application();
 	Application(const Application &) = delete;
 	Application &operator=(const Application &) = delete;
 public:
-	static inline constexpr bool c_IsEditing = false;
+	bool m_IsEditing = false;
 	static inline const std::filesystem::path c_WorldFilePath = "world.fyc";
 	static inline const std::filesystem::path c_CharacterFilePath = "character.fyc";
 	static inline const std::filesystem::path c_DeadlyPlatformsFilePath = "deadly_platforms.fyc";
@@ -102,7 +102,7 @@ private:
 	FYC::World& GetWorld() {return m_PhysicsMode == PhysicsMode::Edit ? m_WorldEdit : m_WorldPlay ;}
 private:
 	FYC::Application::CharacterController m_CharacterController;
-	FYC::Application::EnemyParameters m_EnemyParameters;
+	FYC::Application::EnemyParameters m_EnemyParameters{};
 	std::vector<FYC::World::ID> m_EnemyIds;
 	std::vector<FYC::World::ID> m_DeadlyPlatform;
 	FYC::World::ID m_EndPlatform = FYC::World::NULL_ID;
