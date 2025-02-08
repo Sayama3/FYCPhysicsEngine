@@ -73,7 +73,23 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: ctest -C ${{env.BUILD_TYPE}}
 
-      - uses: actions/upload-artifact@v4
+      - name: Debug windows
+        if: ${{ contains(matrix.os, 'windows') }}
+        run: tree ${{github.workspace}}/build/
+
+      - name: Upload Windows Artifact
+        if: ${{ contains(matrix.os, 'windows') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: "FYCApplication-${{ matrix.os }}-${{matrix.compiler}}"
+          retention-days: 7
+          path: |
+            ${{github.workspace}}/build/Application/**/*.exe
+            ${{github.workspace}}/build/Application/**/*.fyc
+
+      - name: Upload Macos & Linux artifact
+        if: ${{! contains(matrix.os, 'windows') }}
+        uses: actions/upload-artifact@v4
         with:
           name: "FYCApplication-${{ matrix.os }}-${{matrix.compiler}}"
           retention-days: 7
