@@ -73,9 +73,6 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: ctest -C ${{env.BUILD_TYPE}}
 
-      - name: Debug
-        run: sudo apt install tree -y && tree ${{github.workspace}}/build && ls -ls ./Levels/
-
       - uses: actions/upload-artifact@v4
         with:
           name: "FYCApplication-${{ matrix.os }}-${{matrix.compiler}}"
