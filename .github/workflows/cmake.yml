@@ -74,7 +74,7 @@ jobs:
         run: ctest -C ${{env.BUILD_TYPE}}
 
       - name: Debug
-        run: apt install tree -y && tree ${{github.workspace}}/build && ls -ls ./Levels/
+        run: sudo apt install tree -y && tree ${{github.workspace}}/build && ls -ls ./Levels/
 
       - uses: actions/upload-artifact@v4
         with:
