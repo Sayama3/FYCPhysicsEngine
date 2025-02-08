@@ -74,12 +74,11 @@ jobs:
         run: ctest -C ${{env.BUILD_TYPE}}
 
       - name: Debug
-        working-directory: 
         run: apt install tree -y && tree ${{github.workspace}}/build && ls -ls ./Levels/
 
       - uses: actions/upload-artifact@v4
         with:
-          name: "FYCApplication-${{ matrix.os }}-${{compiler}}"
+          name: "FYCApplication-${{ matrix.os }}-${{matrix.compiler}}"
           path: |
             ${{github.workspace}}/build/Application/*FYCPhysicsEngine*
             Levels/*
